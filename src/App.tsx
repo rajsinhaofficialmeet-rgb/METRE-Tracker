@@ -20,6 +20,8 @@ import {
   saveSheetConfig,
   loadLocalCustomRows,
   saveLocalCustomRows,
+  isValidSheetRows,
+  isValidColumnHeader,
   INITIAL_SEED_ROWS,
   DEFAULT_SHEET_ID,
 } from './services/sheetService';
@@ -27,29 +29,80 @@ import { Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Cloud, Sliders } fr
 
 const SCHEMA_STORAGE_PREFIX = 'adaptive_schema_';
 
+// Immediate cleanup of any corrupted localStorage keys
+function cleanCorruptedLocalStorage() {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const val = localStorage.getItem(key) || '';
+        if (
+          val.includes('<!DOCTYPE') ||
+          val.includes('<html') ||
+          val.includes('<script') ||
+          val.includes('deleteIsEnforced') ||
+          val.includes('disableAllReporting') ||
+          val.includes('Array.prototype') ||
+          val.includes('function(')
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    console.warn('Error checking localStorage:', e);
+  }
+}
+
+cleanCorruptedLocalStorage();
+
 export function DashboardContent() {
   const initialConfig = useMemo(() => loadSavedSheetConfig(), []);
   const [sheetId, setSheetId] = useState<string>(initialConfig.sheetId || DEFAULT_SHEET_ID);
   const [appsScriptUrl, setAppsScriptUrl] = useState<string>(initialConfig.appsScriptUrl || '');
   const [syncInterval, setSyncInterval] = useState<number>(initialConfig.syncInterval ?? 30);
   const [rawRows, setRawRows] = useState<SheetRow[]>(() => {
+    cleanCorruptedLocalStorage();
     const cached = loadLocalCustomRows();
-    return cached.length > 0 ? cached : INITIAL_SEED_ROWS;
+    return isValidSheetRows(cached) ? cached : INITIAL_SEED_ROWS;
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
   const [syncSource, setSyncSource] = useState<string>('direct-csv');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Schema state
+  // Schema state with validation against HTML/JS injection
   const [customSchema, setCustomSchema] = useState<SchemaConfig | null>(() => {
     try {
-      const saved = localStorage.getItem(`${SCHEMA_STORAGE_PREFIX}${initialConfig.sheetId || DEFAULT_SHEET_ID}`);
-      return saved ? JSON.parse(saved) : null;
+      const storageKey = `${SCHEMA_STORAGE_PREFIX}${initialConfig.sheetId || DEFAULT_SHEET_ID}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          isValidColumnHeader(parsed.categoryColumn) &&
+          isValidColumnHeader(parsed.locationColumn) &&
+          isValidColumnHeader(parsed.primaryMetricColumn)
+        ) {
+          return parsed;
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   });
+
+  // Guard against any corrupted rawRows in memory
+  useEffect(() => {
+    if (!isValidSheetRows(rawRows)) {
+      console.warn('Found corrupted rows in state, resetting to initial seed dataset.');
+      setRawRows(INITIAL_SEED_ROWS);
+    }
+  }, [rawRows]);
 
   // Modals state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -96,14 +149,19 @@ export function DashboardContent() {
       setIsSyncing(true);
       try {
         const result = await fetchLiveSpreadsheetData(targetSheetId, '0', targetWebhook);
-        if (result.rows && result.rows.length > 0) {
+        if (result.rows && result.rows.length > 0 && isValidSheetRows(result.rows)) {
           setRawRows(result.rows);
           setLastSyncTime(result.lastSync);
           setSyncSource(result.source);
           saveLocalCustomRows(result.rows);
+        } else {
+          // If the fetched sheet is private or invalid, ensure state remains clean
+          setRawRows((prev) => (isValidSheetRows(prev) ? prev : INITIAL_SEED_ROWS));
+          setLastSyncTime(new Date());
         }
       } catch (err: any) {
         console.warn('Sync error, fallback active:', err.message);
+        setRawRows((prev) => (isValidSheetRows(prev) ? prev : INITIAL_SEED_ROWS));
         setLastSyncTime(new Date());
       } finally {
         setIsSyncing(false);

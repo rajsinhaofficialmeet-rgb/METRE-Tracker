@@ -44,6 +44,20 @@ const ID_KEYWORDS = [
 ];
 
 /**
+ * Helper to test if a key is a valid human column name
+ */
+export function isValidColumnHeader(header: string): boolean {
+  if (!header || typeof header !== 'string') return false;
+  const trimmed = header.trim();
+  if (!trimmed || trimmed.startsWith('_')) return false;
+  if (trimmed.startsWith('<') || trimmed.includes('<!DOCTYPE') || trimmed.includes('<html') || trimmed.includes('<script')) return false;
+  if (trimmed.includes('function(') || trimmed.includes('prototype') || trimmed.includes('deleteIsEnforced') || trimmed.includes('disableAllReporting')) return false;
+  if (trimmed.includes('{') || trimmed.includes('}') || trimmed.includes(';') || trimmed.includes('\\x') || trimmed.includes('=>')) return false;
+  if (trimmed.length > 80) return false;
+  return true;
+}
+
+/**
  * Checks if a value looks like a boolean or status string
  */
 export function isBooleanLike(val: any): boolean {
@@ -88,18 +102,19 @@ export function parseNumberSafe(val: any): number {
 export function inspectColumns(rawRows: Record<string, any>[]): ColumnMeta[] {
   if (!rawRows || rawRows.length === 0) return [];
 
-  // 1. Gather all unique column keys from all rows
+  // 1. Gather all unique valid column keys from all rows
   const keySet = new Set<string>();
   rawRows.forEach((row) => {
     Object.keys(row).forEach((k) => {
       const cleanKey = k.trim();
-      if (cleanKey && !cleanKey.startsWith('_')) {
+      if (cleanKey && isValidColumnHeader(cleanKey)) {
         keySet.add(cleanKey);
       }
     });
   });
 
   const allKeys = Array.from(keySet);
+  if (allKeys.length === 0) return [];
 
   // 2. Analyze each column
   return allKeys.map((key) => {
