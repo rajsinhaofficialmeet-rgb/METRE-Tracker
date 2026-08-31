@@ -5,13 +5,11 @@ import { FiltersBar } from './components/FiltersBar';
 import { KPIGrid } from './components/KPIGrid';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import { DataTable } from './components/DataTable';
-import { EmailDistributionModal } from './components/EmailDistributionModal';
+import { ReportDispatchModal } from './components/ReportDispatchModal';
 import { PDFPreviewModal } from './components/PDFPreviewModal';
 import { SheetSettingsModal } from './components/SheetSettingsModal';
-import { SchemaConfigModal } from './components/SchemaConfigModal';
-import { SheetRow, NormalizedSheetRow, FilterState, SchemaConfig, ColumnMeta } from './types';
+import { SheetRow, NormalizedSheetRow, FilterState } from './types';
 import { normalizeSheetRows, computeKPISummary } from './utils/dataParser';
-import { detectSheetSchema, inspectColumns } from './utils/schemaDetector';
 import { isDateInRange } from './utils/dateUtils';
 import {
   fetchLiveSpreadsheetData,
@@ -20,43 +18,10 @@ import {
   saveSheetConfig,
   loadLocalCustomRows,
   saveLocalCustomRows,
-  isValidSheetRows,
-  isValidColumnHeader,
   INITIAL_SEED_ROWS,
   DEFAULT_SHEET_ID,
 } from './services/sheetService';
-import { Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Cloud, Sliders } from 'lucide-react';
-
-const SCHEMA_STORAGE_PREFIX = 'adaptive_schema_';
-
-// Immediate cleanup of any corrupted localStorage keys
-function cleanCorruptedLocalStorage() {
-  try {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        const val = localStorage.getItem(key) || '';
-        if (
-          val.includes('<!DOCTYPE') ||
-          val.includes('<html') ||
-          val.includes('<script') ||
-          val.includes('deleteIsEnforced') ||
-          val.includes('disableAllReporting') ||
-          val.includes('Array.prototype') ||
-          val.includes('function(')
-        ) {
-          keysToRemove.push(key);
-        }
-      }
-    }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
-  } catch (e) {
-    console.warn('Error checking localStorage:', e);
-  }
-}
-
-cleanCorruptedLocalStorage();
+import { Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Cloud, Smartphone, Share2 } from 'lucide-react';
 
 export function DashboardContent() {
   const initialConfig = useMemo(() => loadSavedSheetConfig(), []);
@@ -64,51 +29,18 @@ export function DashboardContent() {
   const [appsScriptUrl, setAppsScriptUrl] = useState<string>(initialConfig.appsScriptUrl || '');
   const [syncInterval, setSyncInterval] = useState<number>(initialConfig.syncInterval ?? 30);
   const [rawRows, setRawRows] = useState<SheetRow[]>(() => {
-    cleanCorruptedLocalStorage();
     const cached = loadLocalCustomRows();
-    return isValidSheetRows(cached) ? cached : INITIAL_SEED_ROWS;
+    return cached.length > 0 ? cached : INITIAL_SEED_ROWS;
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
   const [syncSource, setSyncSource] = useState<string>('direct-csv');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Schema state with validation against HTML/JS injection
-  const [customSchema, setCustomSchema] = useState<SchemaConfig | null>(() => {
-    try {
-      const storageKey = `${SCHEMA_STORAGE_PREFIX}${initialConfig.sheetId || DEFAULT_SHEET_ID}`;
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (
-          isValidColumnHeader(parsed.categoryColumn) &&
-          isValidColumnHeader(parsed.locationColumn) &&
-          isValidColumnHeader(parsed.primaryMetricColumn)
-        ) {
-          return parsed;
-        } else {
-          localStorage.removeItem(storageKey);
-        }
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
-
-  // Guard against any corrupted rawRows in memory
-  useEffect(() => {
-    if (!isValidSheetRows(rawRows)) {
-      console.warn('Found corrupted rows in state, resetting to initial seed dataset.');
-      setRawRows(INITIAL_SEED_ROWS);
-    }
-  }, [rawRows]);
-
   // Modals state
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isSchemaModalOpen, setIsSchemaModalOpen] = useState(false);
 
   // Filter state
   const [filterState, setFilterState] = useState<FilterState>({
@@ -127,41 +59,20 @@ export function DashboardContent() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Inspect columns from raw rows
-  const detectedColumns: ColumnMeta[] = useMemo(() => {
-    return inspectColumns(rawRows);
-  }, [rawRows]);
-
-  // Active Schema: customSchema or auto-detected
-  const activeSchema: SchemaConfig = useMemo(() => {
-    if (customSchema) return customSchema;
-    return detectSheetSchema(rawRows);
-  }, [rawRows, customSchema]);
-
-  // Normalize rows with active dynamic schema
-  const normalizedRows = useMemo(() => {
-    return normalizeSheetRows(rawRows, activeSchema);
-  }, [rawRows, activeSchema]);
-
   // Fetch live sheet data from universal dual-mode service
   const fetchSheetData = useCallback(
     async (targetSheetId = sheetId, targetWebhook = appsScriptUrl) => {
       setIsSyncing(true);
       try {
         const result = await fetchLiveSpreadsheetData(targetSheetId, '0', targetWebhook);
-        if (result.rows && result.rows.length > 0 && isValidSheetRows(result.rows)) {
+        if (result.rows && result.rows.length > 0) {
           setRawRows(result.rows);
           setLastSyncTime(result.lastSync);
           setSyncSource(result.source);
           saveLocalCustomRows(result.rows);
-        } else {
-          // If the fetched sheet is private or invalid, ensure state remains clean
-          setRawRows((prev) => (isValidSheetRows(prev) ? prev : INITIAL_SEED_ROWS));
-          setLastSyncTime(new Date());
         }
       } catch (err: any) {
         console.warn('Sync error, fallback active:', err.message);
-        setRawRows((prev) => (isValidSheetRows(prev) ? prev : INITIAL_SEED_ROWS));
         setLastSyncTime(new Date());
       } finally {
         setIsSyncing(false);
@@ -184,17 +95,9 @@ export function DashboardContent() {
     return () => clearInterval(interval);
   }, [syncInterval, fetchSheetData]);
 
-  // Save config changes when sheetId changes
+  // Save config changes to localStorage
   const handleUpdateSheetId = (newId: string) => {
     setSheetId(newId);
-    // Try to load any saved custom schema for this sheet
-    try {
-      const saved = localStorage.getItem(`${SCHEMA_STORAGE_PREFIX}${newId}`);
-      setCustomSchema(saved ? JSON.parse(saved) : null);
-    } catch {
-      setCustomSchema(null);
-    }
-
     saveSheetConfig({
       sheetId: newId,
       gid: '0',
@@ -204,7 +107,7 @@ export function DashboardContent() {
       syncMode: 'auto',
     });
     fetchSheetData(newId, appsScriptUrl);
-    showToast('Spreadsheet updated & schema dynamically adapted', 'success');
+    showToast('Spreadsheet updated & live sync initiated', 'success');
   };
 
   const handleUpdateAppsScriptUrl = (url: string) => {
@@ -235,26 +138,10 @@ export function DashboardContent() {
     });
   };
 
-  // Schema Modal Handlers
-  const handleSaveCustomSchema = (newSchema: SchemaConfig) => {
-    setCustomSchema(newSchema);
-    try {
-      localStorage.setItem(`${SCHEMA_STORAGE_PREFIX}${sheetId}`, JSON.stringify(newSchema));
-    } catch (e) {
-      console.warn('Could not persist custom schema to localStorage', e);
-    }
-    showToast('Sheet schema and field mappings updated!', 'success');
-  };
-
-  const handleResetToAutoSchema = () => {
-    setCustomSchema(null);
-    try {
-      localStorage.removeItem(`${SCHEMA_STORAGE_PREFIX}${sheetId}`);
-    } catch (e) {
-      console.warn(e);
-    }
-    showToast('Reset to automatic AI schema detection', 'info');
-  };
+  // Normalize rows
+  const normalizedRows = useMemo(() => {
+    return normalizeSheetRows(rawRows);
+  }, [rawRows]);
 
   // Extract distinct categories, locations, store locations for filter options
   const availableCategories = useMemo(() => {
@@ -285,26 +172,26 @@ export function DashboardContent() {
         }
       }
 
-      // 2. Category / Primary Dimension Filter
+      // 2. Category Filter
       if (filterState.categories.length > 0) {
         if (!filterState.categories.includes(row.category)) return false;
       }
 
-      // 3. Location / Secondary Dimension Filter
+      // 3. Location Filter
       if (filterState.locations.length > 0) {
         if (!filterState.locations.includes(row.location)) return false;
       }
 
-      // 4. Status Filter
+      // 4. Installation Status Filter
       if (filterState.installationStatus === 'yes' && !row.installationDone) return false;
       if (filterState.installationStatus === 'no' && row.installationDone) return false;
 
-      // 5. Search Query (across category, location, store, slNo, raw)
+      // 5. Search Query (across category, location, store, slNo)
       if (filterState.searchQuery.trim()) {
         const q = filterState.searchQuery.toLowerCase();
         const matchCategory = row.category.toLowerCase().includes(q);
         const matchLocation = row.location.toLowerCase().includes(q);
-        const matchStore = (row.storeLocation || '').toLowerCase().includes(q);
+        const matchStore = row.storeLocation.toLowerCase().includes(q);
         const matchSlNo = String(row.slNo).includes(q);
         if (!matchCategory && !matchLocation && !matchStore && !matchSlNo) {
           return false;
@@ -315,10 +202,10 @@ export function DashboardContent() {
     });
   }, [normalizedRows, filterState]);
 
-  // Compute KPIs with active schema
+  // Compute KPIs
   const kpis = useMemo(() => {
-    return computeKPISummary(filteredRows, activeSchema);
-  }, [filteredRows, activeSchema]);
+    return computeKPISummary(filteredRows);
+  }, [filteredRows]);
 
   // Filter state update helper
   const handleFilterChange = (newState: Partial<FilterState>) => {
@@ -342,13 +229,14 @@ export function DashboardContent() {
   const handleAddNewRow = async (newRowData: Omit<NormalizedSheetRow, 'id' | 'parsedDate' | 'isoDate'>) => {
     const rawNewRow: SheetRow = {
       _id: `custom-row-${Date.now()}`,
-      [activeSchema.idColumn || 'Sl No.']: newRowData.slNo,
-      [activeSchema.categoryColumn || 'Category']: newRowData.category,
-      [activeSchema.dateColumn || 'Date']: newRowData.date,
-      [activeSchema.statusColumn || 'Installation Done']: newRowData.installationDone ? 'Yes' : 'No',
-      [activeSchema.locationColumn || 'Location']: newRowData.location,
-      [activeSchema.primaryMetricColumn || 'No. of items']: newRowData.noOfItems,
-      [activeSchema.secondaryMetricColumn || 'Store Counts']: newRowData.storeCounts,
+      'Sl No.': newRowData.slNo,
+      'Category': newRowData.category,
+      'Date': newRowData.date,
+      'Installation Done': newRowData.installationDone ? 'Yes' : 'No',
+      'Location': newRowData.location,
+      'No. of items': newRowData.noOfItems,
+      'Store Location': newRowData.storeLocation,
+      'Store Counts': newRowData.storeCounts,
     };
     const updated = [rawNewRow, ...rawRows];
     setRawRows(updated);
@@ -366,16 +254,16 @@ export function DashboardContent() {
   const handleUpdateRow = async (updatedRow: NormalizedSheetRow) => {
     let targetRowData: any = null;
     const updated = rawRows.map((r) => {
-      const rowId = r._id || `row-${r[activeSchema.idColumn] || r['Sl No.']}`;
-      if (rowId === updatedRow.id || String(r[activeSchema.idColumn]) === String(updatedRow.slNo)) {
+      if (r._id === updatedRow.id || String(r['Sl No.']) === String(updatedRow.slNo)) {
         const mutated = {
           ...r,
-          [activeSchema.categoryColumn]: updatedRow.category,
-          [activeSchema.dateColumn]: updatedRow.date,
-          [activeSchema.statusColumn]: updatedRow.installationDone ? 'Yes' : 'No',
-          [activeSchema.locationColumn]: updatedRow.location,
-          [activeSchema.primaryMetricColumn]: updatedRow.noOfItems,
-          [activeSchema.secondaryMetricColumn]: updatedRow.storeCounts,
+          'Category': updatedRow.category,
+          'Date': updatedRow.date,
+          'Installation Done': updatedRow.installationDone ? 'Yes' : 'No',
+          'Location': updatedRow.location,
+          'No. of items': updatedRow.noOfItems,
+          'Store Location': updatedRow.storeLocation,
+          'Store Counts': updatedRow.storeCounts,
         };
         targetRowData = mutated;
         return mutated;
@@ -400,13 +288,12 @@ export function DashboardContent() {
   const handleToggleStatus = async (id: string) => {
     let targetRowData: any = null;
     const updated = rawRows.map((r) => {
-      const rowId = r._id || `row-${r[activeSchema.idColumn] || r['Sl No.']}`;
-      if (rowId === id || `row-${r[activeSchema.idColumn] || r['Sl No.']}` === id) {
-        const currentStatus = String(r[activeSchema.statusColumn] ?? r['Installation Done'] ?? '').trim().toLowerCase();
-        const isDone = currentStatus === 'yes' || currentStatus === 'true' || currentStatus === 'done' || currentStatus === 'completed' || currentStatus === '1';
+      if (r._id === id || `row-${r['Sl No.']}` === id) {
+        const currentStatus = String(r['Installation Done']).trim().toLowerCase();
+        const isDone = currentStatus === 'yes' || currentStatus === 'true' || currentStatus === 'done';
         const mutated = {
           ...r,
-          [activeSchema.statusColumn || 'Installation Done']: isDone ? 'No' : 'Yes',
+          'Installation Done': isDone ? 'No' : 'Yes',
         };
         targetRowData = mutated;
         return mutated;
@@ -420,34 +307,27 @@ export function DashboardContent() {
     if (targetRowData) {
       const syncResult = await writeRowToGoogleSheet('toggleStatus', targetRowData, appsScriptUrl);
       if (syncResult.remoteSynced) {
-        showToast(`Status updated in Google Sheet!`, 'success');
+        showToast(`Status toggled to "${targetRowData['Installation Done']}" in Google Sheet!`, 'success');
       } else {
-        showToast(`Status updated locally.`, 'info');
+        showToast(`Status toggled to "${targetRowData['Installation Done']}".`, 'info');
       }
     }
   };
 
-  // Export Filtered Table to CSV with active schema headers
+  // Export Filtered Table to CSV
   const handleExportCSV = () => {
-    const headers = [
-      activeSchema.idColumn || 'Sl No.',
-      activeSchema.categoryColumn || 'Category',
-      activeSchema.dateColumn || 'Date',
-      activeSchema.statusColumn || 'Installation Done',
-      activeSchema.locationColumn || 'Location',
-      activeSchema.primaryMetricColumn || 'No. of items',
-      activeSchema.secondaryMetricColumn || 'Store Counts',
-    ];
+    const headers = ['Sl No.', 'Category', 'Date', 'Installation Done', 'Location', 'No. of items', 'Store Location', 'Store Counts'];
     const csvLines = [headers.join(',')];
 
     filteredRows.forEach((r) => {
       const line = [
         r.slNo,
-        `"${(r.category || '').replace(/"/g, '""')}"`,
-        `"${r.date || ''}"`,
+        `"${r.category.replace(/"/g, '""')}"`,
+        `"${r.date}"`,
         `"${r.installationDone ? 'Yes' : 'No'}"`,
-        `"${(r.location || '').replace(/"/g, '""')}"`,
+        `"${r.location.replace(/"/g, '""')}"`,
         r.noOfItems,
+        `"${(r.storeLocation || '').replace(/"/g, '""')}"`,
         r.storeCounts,
       ].join(',');
       csvLines.push(line);
@@ -457,7 +337,7 @@ export function DashboardContent() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Sheet_Dashboard_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Mentors_Eduserv_Sheet_Export_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -498,7 +378,7 @@ export function DashboardContent() {
         }}
         syncInterval={syncInterval}
         onChangeSyncInterval={handleChangeSyncInterval}
-        onOpenEmailModal={() => setIsEmailModalOpen(true)}
+        onOpenReportModal={() => setIsReportModalOpen(true)}
         onOpenPDFModal={() => setIsPDFModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
         rowCount={rawRows.length}
@@ -506,7 +386,7 @@ export function DashboardContent() {
 
       {/* Main Container */}
       <main className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Banner: Adaptive Spreadsheet Tracker Status Bar */}
+        {/* Banner: Mentors Eduserv Marketing Campaign Tracker */}
         <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white dark:text-zinc-100 shadow-xs shrink-0">
@@ -515,13 +395,13 @@ export function DashboardContent() {
             <div>
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white">
-                  Adaptive Sheet Tracker
+                  Mentors Eduserv Marketing Tracker
                 </span>
                 <span className="text-[9px] sm:text-[10px] uppercase font-bold font-mono tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  {activeSchema.autoDetected ? 'Auto-Schema Detected' : 'Custom Mapped'}
+                  {appsScriptUrl ? '2-Way Webhook Sync' : 'Live Cloud Sync'}
                 </span>
                 <span className="text-[9px] sm:text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                  {detectedColumns.length} Columns
+                  Vercel Ready
                 </span>
               </div>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono truncate max-w-xs sm:max-w-xl">
@@ -532,21 +412,12 @@ export function DashboardContent() {
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
-              onClick={() => setIsSchemaModalOpen(true)}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors min-h-[38px] sm:min-h-0"
+              onClick={() => setIsReportModalOpen(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/20 transition-colors min-h-[38px] sm:min-h-0"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Map Fields</span>
+              <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+              <span>WhatsApp / Email Report</span>
             </button>
-
-            <button
-              onClick={() => setIsEmailModalOpen(true)}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors min-h-[38px] sm:min-h-0"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>AI Summary</span>
-            </button>
-
             <button
               onClick={() => setIsPDFModalOpen(true)}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-950 shadow-xs transition-colors min-h-[38px] sm:min-h-0"
@@ -556,7 +427,7 @@ export function DashboardContent() {
           </div>
         </div>
 
-        {/* Adaptive Filters Bar with Dynamic Slicers */}
+        {/* Filters Bar with Custom Date Range */}
         <FiltersBar
           filterState={filterState}
           onFilterChange={handleFilterChange}
@@ -566,22 +437,17 @@ export function DashboardContent() {
           totalFilteredCount={filteredRows.length}
           totalRowCount={rawRows.length}
           onResetFilters={handleResetFilters}
-          categoryLabel={activeSchema.categoryColumn || 'Category'}
-          locationLabel={activeSchema.locationColumn || 'Location'}
-          statusLabel={activeSchema.statusColumn || 'Status'}
-          onOpenSchemaModal={() => setIsSchemaModalOpen(true)}
         />
 
-        {/* Adaptive Executive KPI Metric Cards */}
+        {/* Executive KPI Metric Cards */}
         <KPIGrid kpis={kpis} />
 
-        {/* Adaptive Interactive Analytics Visualizations */}
-        <AnalyticsCharts rows={filteredRows} schema={activeSchema} />
+        {/* Interactive Analytics Visualizations (Dark & Light Mode) */}
+        <AnalyticsCharts rows={filteredRows} />
 
-        {/* Adaptive Full Details Spreadsheet Data Grid */}
+        {/* Full Details Spreadsheet Data Grid */}
         <DataTable
           rows={filteredRows}
-          schema={activeSchema}
           onAddNewRow={handleAddNewRow}
           onUpdateRow={handleUpdateRow}
           onToggleStatus={handleToggleStatus}
@@ -590,19 +456,9 @@ export function DashboardContent() {
       </main>
 
       {/* Modals */}
-      <SchemaConfigModal
-        isOpen={isSchemaModalOpen}
-        onClose={() => setIsSchemaModalOpen(false)}
-        columns={detectedColumns}
-        currentSchema={activeSchema}
-        onSaveSchema={handleSaveCustomSchema}
-        onResetToAuto={handleResetToAutoSchema}
-        sheetTitle={sheetId}
-      />
-
-      <EmailDistributionModal
-        isOpen={isEmailModalOpen}
-        onClose={() => setIsEmailModalOpen(false)}
+      <ReportDispatchModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
         filteredRows={filteredRows}
         kpis={kpis}
         filterState={filterState}

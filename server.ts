@@ -22,54 +22,8 @@ function getGeminiClient(): GoogleGenAI | null {
 
 const DEFAULT_SHEET_ID = '1p7_1ApCl2B4t4nWWLnYn3jN7bjOxXSyqzZxdO70hvxY';
 
-// Helper to validate whether a string is valid CSV and NOT an HTML/JS error/login page
-function isValidCSVText(text: string): boolean {
-  if (!text || typeof text !== 'string') return false;
-  const trimmed = text.trim();
-  if (trimmed.length === 0) return false;
-  
-  if (trimmed.startsWith('<') || trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<?xml')) {
-    return false;
-  }
-  
-  const lower = trimmed.toLowerCase();
-  if (
-    lower.includes('<!doctype') ||
-    lower.includes('<html') ||
-    lower.includes('<script') ||
-    lower.includes('<head') ||
-    lower.includes('<body') ||
-    lower.includes('accounts.google.com') ||
-    lower.includes('servicelogin') ||
-    lower.includes("window['ppconfig']") ||
-    lower.includes('deleteisenforced') ||
-    lower.includes('disableallreporting') ||
-    lower.includes('array.prototype') ||
-    lower.includes('function(')
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
-function isValidColumnHeader(header: string): boolean {
-  if (!header || typeof header !== 'string') return false;
-  const trimmed = header.trim();
-  if (!trimmed || trimmed.startsWith('_')) return false;
-  if (trimmed.startsWith('<') || trimmed.includes('<!DOCTYPE') || trimmed.includes('<html') || trimmed.includes('<script')) return false;
-  if (trimmed.includes('function(') || trimmed.includes('prototype') || trimmed.includes('deleteIsEnforced') || trimmed.includes('disableAllReporting')) return false;
-  if (trimmed.includes('{') || trimmed.includes('}') || trimmed.includes(';') || trimmed.includes('\\x') || trimmed.includes('=>')) return false;
-  if (trimmed.length > 80) return false;
-  return true;
-}
-
 // Helper to parse CSV into structured rows
 function parseCSV(csvText: string) {
-  if (!isValidCSVText(csvText)) {
-    return { headers: [], rows: [] };
-  }
-
   const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
   if (lines.length === 0) return { headers: [], rows: [] };
 
@@ -98,22 +52,17 @@ function parseCSV(csvText: string) {
     return result;
   };
 
-  const rawHeaders = parseLine(lines[0]);
-  const validHeaders = rawHeaders.map((h, i) => (isValidColumnHeader(h) ? h : `Column_${i + 1}`));
-  if (!rawHeaders.some(isValidColumnHeader)) {
-    return { headers: [], rows: [] };
-  }
-
+  const headers = parseLine(lines[0]);
   const rows = lines.slice(1).map((line, idx) => {
     const values = parseLine(line);
     const rowObj: Record<string, any> = { _id: `row-${idx + 1}` };
-    validHeaders.forEach((h, i) => {
+    headers.forEach((h, i) => {
       rowObj[h] = values[i] !== undefined ? values[i] : '';
     });
     return rowObj;
   });
 
-  return { headers: validHeaders, rows };
+  return { headers, rows };
 }
 
 // 1. Endpoint to fetch live Google Sheet Data
@@ -139,26 +88,14 @@ app.get('/api/sheet-data', async (req, res) => {
         headers: fetchHeaders
       });
 
-      const contentType = response.headers.get('content-type') || '';
-      if (response.ok && !contentType.includes('text/html')) {
-        const text = await response.text();
-        if (isValidCSVText(text)) {
-          csvData = text;
-        } else {
-          throw new Error('Google Sheet returned HTML/redirect instead of CSV');
-        }
+      if (response.ok) {
+        csvData = await response.text();
       } else {
         // Fallback to Google visualization query endpoint
         const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
         const gvizRes = await fetch(gvizUrl);
-        const gvizContentType = gvizRes.headers.get('content-type') || '';
-        if (gvizRes.ok && !gvizContentType.includes('text/html')) {
-          const gvizText = await gvizRes.text();
-          if (isValidCSVText(gvizText)) {
-            csvData = gvizText;
-          } else {
-            throw new Error('GViz returned HTML instead of CSV');
-          }
+        if (gvizRes.ok) {
+          csvData = await gvizRes.text();
         } else {
           throw new Error(`Failed to fetch spreadsheet. Status: ${response.status}`);
         }

@@ -47,77 +47,7 @@ export const INITIAL_SEED_ROWS: SheetRow[] = [
   { _id: 'r15', 'Sl No.': 20, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1708143 }
 ];
 
-// Helper to validate whether a string is valid CSV and NOT an HTML/JS error/login page
-export function isValidCSVText(text: string): boolean {
-  if (!text || typeof text !== 'string') return false;
-  const trimmed = text.trim();
-  if (trimmed.length === 0) return false;
-  
-  // Check for HTML or XML tags or Google Login redirects
-  if (trimmed.startsWith('<') || trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<?xml')) {
-    return false;
-  }
-  
-  const lower = trimmed.toLowerCase();
-  if (
-    lower.includes('<!doctype') ||
-    lower.includes('<html') ||
-    lower.includes('<script') ||
-    lower.includes('<head') ||
-    lower.includes('<body') ||
-    lower.includes('accounts.google.com') ||
-    lower.includes('servicelogin') ||
-    lower.includes("window['ppconfig']") ||
-    lower.includes('deleteisenforced') ||
-    lower.includes('disableallreporting') ||
-    lower.includes('array.prototype') ||
-    lower.includes('function(')
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
-// Helper to validate whether a column header name is valid and not a JavaScript/HTML snippet
-export function isValidColumnHeader(header: string): boolean {
-  if (!header || typeof header !== 'string') return false;
-  const trimmed = header.trim();
-  if (!trimmed || trimmed.startsWith('_')) return false;
-  if (trimmed.startsWith('<') || trimmed.includes('<!DOCTYPE') || trimmed.includes('<html') || trimmed.includes('<script')) return false;
-  if (trimmed.includes('function(') || trimmed.includes('prototype') || trimmed.includes('deleteIsEnforced') || trimmed.includes('disableAllReporting')) return false;
-  if (trimmed.includes('{') || trimmed.includes('}') || trimmed.includes(';') || trimmed.includes('\\x') || trimmed.includes('=>')) return false;
-  if (trimmed.length > 80) return false;
-  return true;
-}
-
-// Helper to validate whether rows dataset is clean and free of HTML/JS corruption
-export function isValidSheetRows(rows: any[]): boolean {
-  if (!Array.isArray(rows) || rows.length === 0) return false;
-  
-  // Check first few rows for valid keys and content
-  for (let i = 0; i < Math.min(rows.length, 5); i++) {
-    const row = rows[i];
-    if (!row || typeof row !== 'object') return false;
-    const keys = Object.keys(row).filter((k) => !k.startsWith('_'));
-    if (keys.length === 0) return false;
-    
-    // If any key is an HTML/JS snippet, the whole dataset is corrupted
-    for (const k of keys) {
-      if (!isValidColumnHeader(k)) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 export function parseCSV(csvText: string): { headers: string[]; rows: SheetRow[] } {
-  if (!isValidCSVText(csvText)) {
-    console.warn('parseCSV: Received HTML or invalid CSV payload, rejecting.');
-    return { headers: [], rows: [] };
-  }
-
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);
   if (lines.length === 0) return { headers: [], rows: [] };
 
@@ -145,36 +75,25 @@ export function parseCSV(csvText: string): { headers: string[]; rows: SheetRow[]
     return result;
   };
 
-  const rawHeaders = parseLine(lines[0]);
-  // Filter out any headers that look like code or html
-  const validHeaders = rawHeaders.map((h, i) => (isValidColumnHeader(h) ? h : `Column_${i + 1}`));
-  
-  // If no headers are valid human column names, reject
-  if (!rawHeaders.some(isValidColumnHeader)) {
-    return { headers: [], rows: [] };
-  }
-
+  const headers = parseLine(lines[0]);
   const rows: SheetRow[] = lines.slice(1).map((line, idx) => {
     const values = parseLine(line);
     const rowObj: Record<string, any> = { _id: `sheet-row-${idx + 1}` };
-    validHeaders.forEach((h, i) => {
+    headers.forEach((h, i) => {
       rowObj[h] = values[i] !== undefined ? values[i] : '';
     });
     return rowObj as SheetRow;
   });
 
-  return { headers: validHeaders, rows };
+  return { headers, rows };
 }
 
-// Load Sheet Configuration from localStorage with sanitization
+// Load Sheet Configuration from localStorage
 export function loadSavedSheetConfig(): SheetSyncConfig {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_SHEET_CONFIG_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed.sheetId === 'string') {
-        return { ...DEFAULT_SHEET_CONFIG, ...parsed };
-      }
+      return { ...DEFAULT_SHEET_CONFIG, ...JSON.parse(saved) };
     }
   } catch (e) {
     console.warn('Failed to load saved sheet config:', e);
@@ -191,36 +110,23 @@ export function saveSheetConfig(config: SheetSyncConfig) {
   }
 }
 
-// Load locally stored user modified rows with corruption check
+// Load locally stored user modified rows
 export function loadLocalCustomRows(): SheetRow[] {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_CUSTOM_ROWS_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (isValidSheetRows(parsed)) {
-        return parsed;
-      } else {
-        console.warn('Detected corrupted local sheet rows cache (HTML/JS code), purging localStorage.');
-        localStorage.removeItem(LOCAL_STORAGE_CUSTOM_ROWS_KEY);
-      }
+      return JSON.parse(saved);
     }
   } catch (e) {
     console.warn('Failed to load local custom rows:', e);
-    try {
-      localStorage.removeItem(LOCAL_STORAGE_CUSTOM_ROWS_KEY);
-    } catch {}
   }
   return [];
 }
 
-// Save custom rows to localStorage only if clean
+// Save custom rows to localStorage
 export function saveLocalCustomRows(rows: SheetRow[]) {
   try {
-    if (isValidSheetRows(rows)) {
-      localStorage.setItem(LOCAL_STORAGE_CUSTOM_ROWS_KEY, JSON.stringify(rows));
-    } else {
-      console.warn('Refused to save corrupted rows to localStorage.');
-    }
+    localStorage.setItem(LOCAL_STORAGE_CUSTOM_ROWS_KEY, JSON.stringify(rows));
   } catch (e) {
     console.warn('Failed to save local custom rows:', e);
   }
@@ -277,10 +183,10 @@ export async function fetchLiveSpreadsheetData(
     const apiRes = await fetch(`/api/sheet-data?sheetId=${encodeURIComponent(sheetId)}&gid=${gid}&_t=${timestamp}`);
     if (apiRes.ok) {
       const json = await apiRes.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0 && isValidSheetRows(json.data)) {
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
         return {
           rows: json.data,
-          headers: (json.headers || []).filter(isValidColumnHeader),
+          headers: json.headers || [],
           source: 'api',
           lastSync: new Date(),
         };
@@ -294,12 +200,11 @@ export async function fetchLiveSpreadsheetData(
   try {
     const directCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}&_t=${timestamp}`;
     const directRes = await fetch(directCsvUrl);
-    const contentType = directRes.headers.get('content-type') || '';
-    if (directRes.ok && !contentType.includes('text/html')) {
+    if (directRes.ok) {
       const csvText = await directRes.text();
-      if (isValidCSVText(csvText)) {
+      if (csvText && csvText.includes(',')) {
         const parsed = parseCSV(csvText);
-        if (parsed.rows.length > 0 && isValidSheetRows(parsed.rows)) {
+        if (parsed.rows.length > 0) {
           return {
             rows: parsed.rows,
             headers: parsed.headers,
@@ -317,12 +222,11 @@ export async function fetchLiveSpreadsheetData(
   try {
     const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}&_t=${timestamp}`;
     const gvizRes = await fetch(gvizUrl);
-    const contentType = gvizRes.headers.get('content-type') || '';
-    if (gvizRes.ok && !contentType.includes('text/html')) {
+    if (gvizRes.ok) {
       const csvText = await gvizRes.text();
-      if (isValidCSVText(csvText)) {
+      if (csvText && csvText.includes(',')) {
         const parsed = parseCSV(csvText);
-        if (parsed.rows.length > 0 && isValidSheetRows(parsed.rows)) {
+        if (parsed.rows.length > 0) {
           return {
             rows: parsed.rows,
             headers: parsed.headers,
@@ -338,7 +242,7 @@ export async function fetchLiveSpreadsheetData(
 
   // 5. Fallback: Return cached local rows or initial seed data
   const localRows = loadLocalCustomRows();
-  if (localRows.length > 0 && isValidSheetRows(localRows)) {
+  if (localRows.length > 0) {
     return {
       rows: localRows,
       headers: ['Sl No.', 'Category', 'Date', 'Installation Done', 'Location', 'No. of items', 'Store Location', 'Store Counts'],

@@ -13,6 +13,9 @@ import {
   Menu,
   X,
   Sparkles,
+  Share2,
+  Smartphone,
+  MessageSquare,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -23,7 +26,7 @@ interface HeaderProps {
   onManualSync: () => void;
   syncInterval: number; // in seconds, 0 = manual
   onChangeSyncInterval: (sec: number) => void;
-  onOpenEmailModal: () => void;
+  onOpenReportModal: () => void;
   onOpenPDFModal: () => void;
   onOpenSettingsModal: () => void;
   rowCount: number;
@@ -36,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onManualSync,
   syncInterval,
   onChangeSyncInterval,
-  onOpenEmailModal,
+  onOpenReportModal,
   onOpenPDFModal,
   onOpenSettingsModal,
   rowCount,
@@ -162,13 +165,13 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Google Sheet</span>
             </a>
 
-            {/* Email Distribution Button */}
+            {/* WhatsApp & Email Report Dispatch Button */}
             <button
-              onClick={onOpenEmailModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-colors"
+              onClick={onOpenReportModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors shadow-2xs"
             >
-              <Mail className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Distribute</span>
+              <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+              <span>WhatsApp / Email</span>
             </button>
 
             {/* PDF Report Export Button */}
@@ -299,12 +302,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  onOpenEmailModal();
+                  onOpenReportModal();
                 }}
-                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-indigo-600 text-white font-semibold text-xs shadow-xs min-h-[44px] active:scale-98"
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-xs min-h-[44px] active:scale-98"
               >
-                <Mail className="w-4 h-4" />
-                <span>Distribute</span>
+                <Smartphone className="w-4 h-4" />
+                <span>WhatsApp / Email</span>
               </button>
 
               <button
