@@ -8,9 +8,10 @@ import {
   Tag, 
   MapPin, 
   CheckCircle2, 
-  ChevronDown,
-  ChevronUp,
+  ChevronDown, 
+  ChevronUp, 
   SlidersHorizontal,
+  Sparkles,
 } from 'lucide-react';
 import { FilterState } from '../types';
 
@@ -23,6 +24,10 @@ interface FiltersBarProps {
   totalFilteredCount: number;
   totalRowCount: number;
   onResetFilters: () => void;
+  categoryLabel?: string;
+  locationLabel?: string;
+  statusLabel?: string;
+  onOpenSchemaModal?: () => void;
 }
 
 export const FiltersBar: React.FC<FiltersBarProps> = ({
@@ -30,10 +35,13 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   onFilterChange,
   availableCategories,
   availableLocations,
-  availableStoreLocations,
   totalFilteredCount,
   totalRowCount,
   onResetFilters,
+  categoryLabel = 'Category',
+  locationLabel = 'Location',
+  statusLabel = 'Status',
+  onOpenSchemaModal,
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
@@ -43,7 +51,6 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
     filterState.endDate !== '' ||
     filterState.categories.length > 0 ||
     filterState.locations.length > 0 ||
-    filterState.storeLocations.length > 0 ||
     filterState.installationStatus !== 'all' ||
     filterState.searchQuery !== '';
 
@@ -56,8 +63,6 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   const handleDatePresetChange = (preset: FilterState['datePreset']) => {
     if (preset === 'all') {
       onFilterChange({ datePreset: 'all', startDate: '', endDate: '' });
-    } else if (preset === 'aug2026') {
-      onFilterChange({ datePreset: 'aug2026', startDate: '2026-08-01', endDate: '2026-08-31' });
     } else if (preset === 'today') {
       const todayIso = new Date().toISOString().split('T')[0];
       onFilterChange({ datePreset: 'today', startDate: todayIso, endDate: todayIso });
@@ -73,6 +78,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
       d.setDate(d.getDate() - 30);
       const startIso = d.toISOString().split('T')[0];
       onFilterChange({ datePreset: 'last30', startDate: startIso, endDate: endIso });
+    } else if (preset === 'aug2026') {
+      onFilterChange({ datePreset: 'aug2026', startDate: '2026-08-01', endDate: '2026-08-31' });
     } else {
       onFilterChange({ datePreset: 'custom' });
     }
@@ -81,7 +88,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   const toggleCategory = (cat: string) => {
     const exists = filterState.categories.includes(cat);
     if (exists) {
-      onFilterChange({ categories: filterState.categories.filter(c => c !== cat) });
+      onFilterChange({ categories: filterState.categories.filter((c) => c !== cat) });
     } else {
       onFilterChange({ categories: [...filterState.categories, cat] });
     }
@@ -90,7 +97,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   const toggleLocation = (loc: string) => {
     const exists = filterState.locations.includes(loc);
     if (exists) {
-      onFilterChange({ locations: filterState.locations.filter(l => l !== loc) });
+      onFilterChange({ locations: filterState.locations.filter((l) => l !== loc) });
     } else {
       onFilterChange({ locations: [...filterState.locations, loc] });
     }
@@ -105,7 +112,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            placeholder="Search category, location, store..."
+            placeholder={`Search ${categoryLabel}, ${locationLabel}, records...`}
             value={filterState.searchQuery}
             onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
             className="w-full pl-9 pr-8 py-2.5 sm:py-2 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -123,14 +130,14 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
 
         {/* Date Presets - Horizontally Scrollable on Mobile */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs -mx-1 px-1">
-          <span className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-wider mr-1 hidden xl:inline shrink-0">
+          <span className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-wider mr-1 hidden xl:inline shrink-0 font-mono">
             PRESETS:
           </span>
           {[
             { id: 'all', label: 'All Dates' },
-            { id: 'aug2026', label: 'Aug 2026' },
             { id: 'today', label: 'Today' },
             { id: 'last7', label: 'Last 7D' },
+            { id: 'last30', label: 'Last 30D' },
             { id: 'custom', label: 'Custom' },
           ].map((preset) => (
             <button
@@ -156,7 +163,19 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             </span>
           </div>
 
-          {/* Toggle Advanced Filters Button (Mobile & Desktop) */}
+          {/* Map Columns / Schema Trigger Button */}
+          {onOpenSchemaModal && (
+            <button
+              onClick={onOpenSchemaModal}
+              title="Inspect or customize column mapping for this spreadsheet"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Map Fields</span>
+            </button>
+          )}
+
+          {/* Toggle Advanced Filters Button */}
           <button
             onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
@@ -191,7 +210,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
         </div>
       </div>
 
-      {/* Advanced Filters Panel: Open on desktop by default or toggled on mobile */}
+      {/* Advanced Filters Panel */}
       <div className={`${isAdvancedOpen ? 'block' : 'hidden lg:block'} pt-4`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Custom Start / End Date */}
@@ -229,8 +248,14 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
 
           {/* Category Selector */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-              <Tag className="w-3 h-3 text-zinc-400" /> Campaign Category
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
+              <span className="flex items-center gap-1 truncate">
+                <Tag className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span className="truncate">{categoryLabel} Slicer</span>
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {filterState.categories.length > 0 ? `${filterState.categories.length} selected` : 'All'}
+              </span>
             </label>
             <div className="flex flex-wrap gap-1.5 max-h-20 sm:max-h-16 overflow-y-auto pr-1">
               {availableCategories.map((cat) => {
@@ -250,15 +275,21 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
                 );
               })}
               {availableCategories.length === 0 && (
-                <span className="text-xs text-zinc-400">No categories</span>
+                <span className="text-xs text-zinc-400">No {categoryLabel.toLowerCase()} items</span>
               )}
             </div>
           </div>
 
           {/* Location Selector */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-zinc-400" /> Geographic Location
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
+              <span className="flex items-center gap-1 truncate">
+                <MapPin className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span className="truncate">{locationLabel} Slicer</span>
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {filterState.locations.length > 0 ? `${filterState.locations.length} selected` : 'All'}
+              </span>
             </label>
             <div className="flex flex-wrap gap-1.5 max-h-20 sm:max-h-16 overflow-y-auto pr-1">
               {availableLocations.map((loc) => {
@@ -277,19 +308,23 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
                   </button>
                 );
               })}
+              {availableLocations.length === 0 && (
+                <span className="text-xs text-zinc-400">No {locationLabel.toLowerCase()} items</span>
+              )}
             </div>
           </div>
 
-          {/* Installation Status */}
+          {/* Status Slicer */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-zinc-400" /> Installation Status
+            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1 truncate">
+              <CheckCircle2 className="w-3 h-3 text-zinc-400 shrink-0" />
+              <span className="truncate">{statusLabel} Filter</span>
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {[
                 { id: 'all', label: 'All' },
-                { id: 'yes', label: 'Done' },
-                { id: 'no', label: 'Pending' },
+                { id: 'yes', label: 'Positive / Done' },
+                { id: 'no', label: 'Pending / Open' },
               ].map((status) => (
                 <button
                   key={status.id}
@@ -298,7 +333,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
                       installationStatus: status.id as FilterState['installationStatus'],
                     })
                   }
-                  className={`py-1.5 text-xs font-semibold rounded-lg border text-center transition-colors ${
+                  className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border text-center transition-colors truncate ${
                     filterState.installationStatus === status.id
                       ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 border-transparent shadow-xs'
                       : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -314,4 +349,3 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
     </div>
   );
 };
-

@@ -1,19 +1,35 @@
+export interface ColumnMeta {
+  key: string;
+  label: string;
+  type: 'string' | 'number' | 'date' | 'boolean';
+  uniqueCount: number;
+  sampleValues: string[];
+  isMetric: boolean;
+  isDimension: boolean;
+  isDate: boolean;
+  isStatus: boolean;
+}
+
+export interface SchemaConfig {
+  idColumn: string;
+  categoryColumn: string;
+  locationColumn: string;
+  dateColumn: string;
+  statusColumn: string;
+  primaryMetricColumn: string;
+  secondaryMetricColumn: string;
+  sheetTitle: string;
+  autoDetected: boolean;
+}
+
 export interface SheetRow {
-  _id: string;
-  'Sl No.': string | number;
-  'Category': string;
-  'Date': string;
-  'Installation Done': string;
-  'Location': string;
-  'No. of items': string | number;
-  'Store Location': string;
-  'Store Counts': string | number;
+  _id?: string;
   [key: string]: any;
 }
 
 export interface NormalizedSheetRow {
   id: string;
-  slNo: number;
+  slNo: number | string;
   category: string;
   date: string; // original string e.g. "28/08/26"
   parsedDate: Date | null;
@@ -24,6 +40,8 @@ export interface NormalizedSheetRow {
   noOfItems: number;
   storeLocation: string;
   storeCounts: number;
+  _raw: Record<string, any>;
+  [key: string]: any;
 }
 
 export interface FilterState {
@@ -35,6 +53,7 @@ export interface FilterState {
   storeLocations: string[];
   installationStatus: 'all' | 'yes' | 'no';
   searchQuery: string;
+  customFilters?: Record<string, string[]>;
 }
 
 export interface InstallationGrowthKPI {
@@ -49,6 +68,11 @@ export interface InstallationGrowthKPI {
 }
 
 export interface KPISummary {
+  primaryMetricLabel: string;
+  secondaryMetricLabel: string;
+  primaryDimensionLabel: string;
+  secondaryDimensionLabel: string;
+  statusLabel: string;
   totalItems: number;
   installedItems: number;
   pendingItems: number;
@@ -60,6 +84,7 @@ export interface KPISummary {
   topCategory: { name: string; items: number };
   totalRecords: number;
   installationGrowth: InstallationGrowthKPI;
+  dimensionBreakdown?: Array<{ name: string; items: number; percentage: number }>;
 }
 
 export interface Stakeholder {
@@ -87,3 +112,4 @@ export interface ScheduleConfig {
   reportType: 'weekly_summary' | 'daily_digest' | 'executive_report';
   recipients: string[];
 }
+

@@ -1,20 +1,54 @@
-import { SheetRow, NormalizedSheetRow, KPISummary, InstallationGrowthKPI } from '../types';
+import { SheetRow, NormalizedSheetRow, KPISummary, InstallationGrowthKPI, SchemaConfig } from '../types';
 import { parseSheetDate } from './dateUtils';
+import { parseBooleanStatus, parseNumberSafe, detectSheetSchema } from './schemaDetector';
 
-export function normalizeSheetRows(rawRows: SheetRow[]): NormalizedSheetRow[] {
-  if (!Array.isArray(rawRows)) return [];
+/**
+ * Normalizes raw sheet rows using dynamic schema mapping
+ */
+export function normalizeSheetRows(
+  rawRows: SheetRow[],
+  schemaConfig?: SchemaConfig
+): NormalizedSheetRow[] {
+  if (!Array.isArray(rawRows) || rawRows.length === 0) return [];
+
+  // If no schema provided, run auto-detection
+  const schema = schemaConfig || detectSheetSchema(rawRows);
 
   return rawRows.map((row, index) => {
-    const slNo = parseInt(String(row['Sl No.'] || index + 1), 10) || index + 1;
-    const category = String(row['Category'] || 'General').trim();
-    const dateRaw = String(row['Date'] || '').trim();
+    // Extract raw fields safely
+    const rawRecord: Record<string, any> = { ...row };
+
+    // 1. ID / Sl No.
+    const idVal = row[schema.idColumn] ?? row['Sl No.'] ?? row['id'] ?? index + 1;
+    const slNo = typeof idVal === 'number' ? idVal : (parseInt(String(idVal), 10) || index + 1);
+
+    // 2. Primary Category Dimension
+    const categoryRaw = row[schema.categoryColumn] ?? row['Category'] ?? row['Type'] ?? row['Product'] ?? 'General';
+    const category = String(categoryRaw || 'General').trim();
+
+    // 3. Date
+    const dateRaw = String(row[schema.dateColumn] ?? row['Date'] ?? row['Created'] ?? '').trim();
     const { date, iso } = parseSheetDate(dateRaw);
-    const installDoneRaw = String(row['Installation Done'] || '').trim().toLowerCase();
-    const installationDone = installDoneRaw === 'yes' || installDoneRaw === 'true' || installDoneRaw === 'done' || installDoneRaw === '1';
-    const location = String(row['Location'] || 'Unspecified').trim();
-    const noOfItems = parseFloat(String(row['No. of items'] || 0).replace(/[^0-9.-]/g, '')) || 0;
-    const storeLocation = String(row['Store Location'] || '').trim();
-    const storeCounts = parseFloat(String(row['Store Counts'] || 0).replace(/[^0-9.-]/g, '')) || 0;
+
+    // 4. Status / Boolean
+    const statusRaw = row[schema.statusColumn] ?? row['Installation Done'] ?? row['Status'] ?? row['Done'] ?? '';
+    const installationDone = parseBooleanStatus(statusRaw);
+    const installationStatusText = String(statusRaw || (installationDone ? 'Yes' : 'Pending')).trim();
+
+    // 5. Secondary Location / Group Dimension
+    const locationRaw = row[schema.locationColumn] ?? row['Location'] ?? row['City'] ?? row['Region'] ?? 'General';
+    const location = String(locationRaw || 'General').trim();
+
+    // 6. Primary Metric
+    const primaryMetricRaw = row[schema.primaryMetricColumn] ?? row['No. of items'] ?? row['Quantity'] ?? row['Amount'] ?? 0;
+    const noOfItems = parseNumberSafe(primaryMetricRaw);
+
+    // 7. Store Location (or 3rd dimension if exists)
+    const storeLocation = String(row['Store Location'] ?? row['Address'] ?? row['Site'] ?? '').trim();
+
+    // 8. Secondary Metric
+    const secondaryMetricRaw = row[schema.secondaryMetricColumn] ?? row['Store Counts'] ?? row['Stores'] ?? row['Reach'] ?? 0;
+    const storeCounts = parseNumberSafe(secondaryMetricRaw);
 
     return {
       id: row._id || `row-${index + 1}-${slNo}`,
@@ -24,18 +58,22 @@ export function normalizeSheetRows(rawRows: SheetRow[]): NormalizedSheetRow[] {
       parsedDate: date,
       isoDate: iso,
       installationDone,
-      installationStatusText: installationDone ? 'Yes' : 'Pending',
+      installationStatusText,
       location,
       noOfItems,
       storeLocation,
       storeCounts,
+      _raw: rawRecord,
+      ...rawRecord, // Allow direct property access to any sheet column
     };
   });
 }
 
-export function computeInstallationGrowth(rows: NormalizedSheetRow[]): InstallationGrowthKPI {
-  const installedRows = rows.filter(r => r.installationDone);
-  
+export function computeInstallationGrowth(
+  rows: NormalizedSheetRow[]
+): InstallationGrowthKPI {
+  const installedRows = rows.filter((r) => r.installationDone);
+
   if (installedRows.length === 0) {
     return {
       growthPercentage: 0,
@@ -45,17 +83,21 @@ export function computeInstallationGrowth(rows: NormalizedSheetRow[]): Installat
       previousWeekRecords: 0,
       currentWeekItems: 0,
       previousWeekItems: 0,
-      hasPreviousWeekData: false
+      hasPreviousWeekData: false,
     };
   }
 
   // Get rows with parsed dates
   const datedRows = installedRows
-    .map(r => ({
+    .map((r) => ({
       row: r,
-      time: r.parsedDate ? r.parsedDate.getTime() : (r.isoDate ? new Date(r.isoDate).getTime() : 0)
+      time: r.parsedDate
+        ? r.parsedDate.getTime()
+        : r.isoDate
+        ? new Date(r.isoDate).getTime()
+        : 0,
     }))
-    .filter(item => !isNaN(item.time) && item.time > 0)
+    .filter((item) => !isNaN(item.time) && item.time > 0)
     .sort((a, b) => a.time - b.time);
 
   if (datedRows.length === 0) {
@@ -67,19 +109,51 @@ export function computeInstallationGrowth(rows: NormalizedSheetRow[]): Installat
       previousWeekRecords: 0,
       currentWeekItems: installedRows.reduce((sum, r) => sum + r.noOfItems, 0),
       previousWeekItems: 0,
-      hasPreviousWeekData: false
+      hasPreviousWeekData: false,
     };
   }
 
   // Anchor to the latest date in the filtered dataset
   const latestItem = datedRows[datedRows.length - 1];
   const latestDate = new Date(latestItem.time);
-  
+
   // 7-day rolling windows
-  const currentEnd = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate(), 23, 59, 59, 999).getTime();
-  const currentStart = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 6, 0, 0, 0, 0).getTime();
-  const prevEnd = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 7, 23, 59, 59, 999).getTime();
-  const prevStart = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 13, 0, 0, 0, 0).getTime();
+  const currentEnd = new Date(
+    latestDate.getFullYear(),
+    latestDate.getMonth(),
+    latestDate.getDate(),
+    23,
+    59,
+    59,
+    999
+  ).getTime();
+  const currentStart = new Date(
+    latestDate.getFullYear(),
+    latestDate.getMonth(),
+    latestDate.getDate() - 6,
+    0,
+    0,
+    0,
+    0
+  ).getTime();
+  const prevEnd = new Date(
+    latestDate.getFullYear(),
+    latestDate.getMonth(),
+    latestDate.getDate() - 7,
+    23,
+    59,
+    59,
+    999
+  ).getTime();
+  const prevStart = new Date(
+    latestDate.getFullYear(),
+    latestDate.getMonth(),
+    latestDate.getDate() - 13,
+    0,
+    0,
+    0,
+    0
+  ).getTime();
 
   let currentWeekRecords = 0;
   let previousWeekRecords = 0;
@@ -139,13 +213,27 @@ export function computeInstallationGrowth(rows: NormalizedSheetRow[]): Installat
     previousWeekRecords,
     currentWeekItems,
     previousWeekItems,
-    hasPreviousWeekData
+    hasPreviousWeekData,
   };
 }
 
-export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
+export function computeKPISummary(
+  rows: NormalizedSheetRow[],
+  schema?: SchemaConfig
+): KPISummary {
+  const primaryMetricLabel = schema?.primaryMetricColumn || 'Total Items';
+  const secondaryMetricLabel = schema?.secondaryMetricColumn || 'Store Counts';
+  const primaryDimensionLabel = schema?.categoryColumn || 'Category';
+  const secondaryDimensionLabel = schema?.locationColumn || 'Location';
+  const statusLabel = schema?.statusColumn || 'Installation Done';
+
   if (rows.length === 0) {
     return {
+      primaryMetricLabel,
+      secondaryMetricLabel,
+      primaryDimensionLabel,
+      secondaryDimensionLabel,
+      statusLabel,
       totalItems: 0,
       installedItems: 0,
       pendingItems: 0,
@@ -164,8 +252,9 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
         previousWeekRecords: 0,
         currentWeekItems: 0,
         previousWeekItems: 0,
-        hasPreviousWeekData: false
-      }
+        hasPreviousWeekData: false,
+      },
+      dimensionBreakdown: [],
     };
   }
 
@@ -175,7 +264,7 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
   const locationMap: Record<string, number> = {};
   const categoryMap: Record<string, number> = {};
 
-  rows.forEach(r => {
+  rows.forEach((r) => {
     totalItems += r.noOfItems;
     if (r.installationDone) {
       installedItems += r.noOfItems;
@@ -191,7 +280,8 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
   });
 
   const pendingItems = Math.max(0, totalItems - installedItems);
-  const completionRate = totalItems > 0 ? Math.round((installedItems / totalItems) * 100) : 100;
+  const completionRate =
+    totalItems > 0 ? Math.round((installedItems / totalItems) * 100) : 100;
 
   // Find top location
   let topLocation = { name: 'None', items: 0 };
@@ -209,9 +299,22 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
     }
   });
 
+  const dimensionBreakdown = Object.entries(categoryMap)
+    .map(([name, items]) => ({
+      name,
+      items,
+      percentage: totalItems > 0 ? Math.round((items / totalItems) * 100) : 0,
+    }))
+    .sort((a, b) => b.items - a.items);
+
   const installationGrowth = computeInstallationGrowth(rows);
 
   return {
+    primaryMetricLabel,
+    secondaryMetricLabel,
+    primaryDimensionLabel,
+    secondaryDimensionLabel,
+    statusLabel,
     totalItems,
     installedItems,
     pendingItems,
@@ -222,7 +325,8 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
     topLocation,
     topCategory,
     totalRecords: rows.length,
-    installationGrowth
+    installationGrowth,
+    dimensionBreakdown,
   };
 }
 
