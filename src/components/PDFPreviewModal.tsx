@@ -64,26 +64,26 @@ export const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 my-auto max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700">
-              <FileText className="w-5 h-5 text-indigo-400" />
+        <div className="flex items-start justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shrink-0">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+              <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">
                 Export Executive PDF Report
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-                Configure report parameters and generate a publication-ready PDF document
+              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+                Configure parameters and download publication-ready PDF
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-2 rounded-lg text-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             ✕
           </button>

@@ -253,67 +253,67 @@ export const EmailDistributionModal: React.FC<EmailDistributionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-3xl w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 my-auto max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700">
-              <Mail className="w-5 h-5 text-indigo-400" />
+        <div className="flex items-start justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 shrink-0">
+              <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
-                Automated Stakeholder Email Distribution
+              <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white">
+                Stakeholder Email Distribution
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-                Dispatch AI-generated weekly project summaries & operational status updates
+              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+                Dispatch AI-generated weekly summaries & operational updates
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-2 rounded-lg text-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             ✕
           </button>
         </div>
 
         {/* Tabs: Compose | Schedule | History */}
-        <div className="flex items-center gap-2 pt-4 pb-2 border-b border-zinc-100 dark:border-zinc-800/80 text-xs">
+        <div className="flex items-center gap-1.5 sm:gap-2 pt-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/80 text-xs overflow-x-auto">
           <button
             onClick={() => setActiveTab('compose')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-xl transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 font-semibold rounded-xl whitespace-nowrap transition-colors ${
               activeTab === 'compose'
                 ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Compose & Dispatch</span>
+            <span>Compose</span>
           </button>
 
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-xl transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 font-semibold rounded-xl whitespace-nowrap transition-colors ${
               activeTab === 'schedule'
                 ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Automated Schedule</span>
+            <span>Schedule</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-xl transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 font-semibold rounded-xl whitespace-nowrap transition-colors ${
               activeTab === 'history'
                 ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>Distribution History ({emailLogs.length})</span>
+            <span>History ({emailLogs.length})</span>
           </button>
         </div>
 

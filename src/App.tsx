@@ -11,44 +11,31 @@ import { SheetSettingsModal } from './components/SheetSettingsModal';
 import { SheetRow, NormalizedSheetRow, FilterState } from './types';
 import { normalizeSheetRows, computeKPISummary } from './utils/dataParser';
 import { isDateInRange } from './utils/dateUtils';
-import { AlertCircle, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
-
-const DEFAULT_SHEET_ID = '1p7_1ApCl2B4t4nWWLnYn3jN7bjOxXSyqzZxdO70hvxY';
-
-// Fallback initial dataset from the spreadsheet
-const INITIAL_FALLBACK_ROWS: SheetRow[] = [
-  // Previous Week Deployments (21/08/26 - 22/08/26)
-  { _id: 'r-prev1', 'Sl No.': 1, 'Category': 'Hoarding', 'Date': '21/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 42, 'Store Location': 'PL', 'Store Counts': 980 },
-  { _id: 'r-prev2', 'Sl No.': 2, 'Category': 'Hoarding', 'Date': '21/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 18, 'Store Location': 'Boring road', 'Store Counts': 1200400 },
-  { _id: 'r-prev3', 'Sl No.': 3, 'Category': 'Banners', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 28, 'Store Location': 'PL', 'Store Counts': 380450 },
-  { _id: 'r-prev4', 'Sl No.': 4, 'Category': 'AutoVenyl', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 65, 'Store Location': 'Boring road', 'Store Counts': 3100200 },
-  { _id: 'r-prev5', 'Sl No.': 5, 'Category': 'Banners', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 38, 'Store Location': 'PL', 'Store Counts': 3450000 },
-  
-  // Current Week Deployments (28/08/26 - 29/08/26)
-  { _id: 'r1', 'Sl No.': 6, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1242 },
-  { _id: 'r2', 'Sl No.': 7, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1655783 },
-  { _id: 'r3', 'Sl No.': 8, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 452664 },
-  { _id: 'r4', 'Sl No.': 9, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 4515645 },
-  { _id: 'r5', 'Sl No.': 10, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 4741356 },
-  { _id: 'r6', 'Sl No.': 11, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 597535.8 },
-  { _id: 'r7', 'Sl No.': 12, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'PL', 'Store Counts': 720936.6 },
-  { _id: 'r8', 'Sl No.': 13, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'Boring road', 'Store Counts': 844337.4 },
-  { _id: 'r9', 'Sl No.': 14, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'PL', 'Store Counts': 967738.2 },
-  { _id: 'r10', 'Sl No.': 15, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 1091139 },
-  { _id: 'r11', 'Sl No.': 16, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1214539.8 },
-  { _id: 'r12', 'Sl No.': 17, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1337940.6 },
-  { _id: 'r13', 'Sl No.': 18, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 1461341.4 },
-  { _id: 'r14', 'Sl No.': 19, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 1584742.2 },
-  { _id: 'r15', 'Sl No.': 20, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1708143 }
-];
+import {
+  fetchLiveSpreadsheetData,
+  writeRowToGoogleSheet,
+  loadSavedSheetConfig,
+  saveSheetConfig,
+  loadLocalCustomRows,
+  saveLocalCustomRows,
+  INITIAL_SEED_ROWS,
+  DEFAULT_SHEET_ID,
+} from './services/sheetService';
+import { Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, Cloud } from 'lucide-react';
 
 export function DashboardContent() {
-  const [sheetId, setSheetId] = useState<string>(DEFAULT_SHEET_ID);
-  const [rawRows, setRawRows] = useState<SheetRow[]>(INITIAL_FALLBACK_ROWS);
+  const initialConfig = useMemo(() => loadSavedSheetConfig(), []);
+  const [sheetId, setSheetId] = useState<string>(initialConfig.sheetId || DEFAULT_SHEET_ID);
+  const [appsScriptUrl, setAppsScriptUrl] = useState<string>(initialConfig.appsScriptUrl || '');
+  const [syncInterval, setSyncInterval] = useState<number>(initialConfig.syncInterval ?? 30);
+  const [rawRows, setRawRows] = useState<SheetRow[]>(() => {
+    const cached = loadLocalCustomRows();
+    return cached.length > 0 ? cached : INITIAL_SEED_ROWS;
+  });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
-  const [syncInterval, setSyncInterval] = useState<number>(30); // 30 seconds default
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSource, setSyncSource] = useState<string>('direct-csv');
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   // Modals state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -67,26 +54,32 @@ export function DashboardContent() {
     searchQuery: '',
   });
 
-  // Fetch live sheet data from backend
-  const fetchSheetData = useCallback(async (targetSheetId = sheetId) => {
-    setIsSyncing(true);
-    setSyncError(null);
-    try {
-      const res = await fetch(`/api/sheet-data?sheetId=${encodeURIComponent(targetSheetId)}`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        setRawRows(json.data);
+  const showToast = (text: string, type: 'success' | 'info' | 'error' = 'info') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Fetch live sheet data from universal dual-mode service
+  const fetchSheetData = useCallback(
+    async (targetSheetId = sheetId, targetWebhook = appsScriptUrl) => {
+      setIsSyncing(true);
+      try {
+        const result = await fetchLiveSpreadsheetData(targetSheetId, '0', targetWebhook);
+        if (result.rows && result.rows.length > 0) {
+          setRawRows(result.rows);
+          setLastSyncTime(result.lastSync);
+          setSyncSource(result.source);
+          saveLocalCustomRows(result.rows);
+        }
+      } catch (err: any) {
+        console.warn('Sync error, fallback active:', err.message);
         setLastSyncTime(new Date());
+      } finally {
+        setIsSyncing(false);
       }
-    } catch (err: any) {
-      console.warn('Live fetch error, maintaining synchronized state:', err.message);
-      // If error occurs, keep existing rows and note status
-      setLastSyncTime(new Date());
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [sheetId]);
+    },
+    [sheetId, appsScriptUrl]
+  );
 
   // Initial fetch on mount
   useEffect(() => {
@@ -101,6 +94,49 @@ export function DashboardContent() {
     }, syncInterval * 1000);
     return () => clearInterval(interval);
   }, [syncInterval, fetchSheetData]);
+
+  // Save config changes to localStorage
+  const handleUpdateSheetId = (newId: string) => {
+    setSheetId(newId);
+    saveSheetConfig({
+      sheetId: newId,
+      gid: '0',
+      appsScriptUrl,
+      syncInterval,
+      lastSyncTime: new Date().toISOString(),
+      syncMode: 'auto',
+    });
+    fetchSheetData(newId, appsScriptUrl);
+    showToast('Spreadsheet updated & live sync initiated', 'success');
+  };
+
+  const handleUpdateAppsScriptUrl = (url: string) => {
+    setAppsScriptUrl(url);
+    saveSheetConfig({
+      sheetId,
+      gid: '0',
+      appsScriptUrl: url,
+      syncInterval,
+      lastSyncTime: new Date().toISOString(),
+      syncMode: 'auto',
+    });
+    if (url) {
+      showToast('2-Way Google Apps Script Webhook configured!', 'success');
+      fetchSheetData(sheetId, url);
+    }
+  };
+
+  const handleChangeSyncInterval = (interval: number) => {
+    setSyncInterval(interval);
+    saveSheetConfig({
+      sheetId,
+      gid: '0',
+      appsScriptUrl,
+      syncInterval: interval,
+      lastSyncTime: new Date().toISOString(),
+      syncMode: 'auto',
+    });
+  };
 
   // Normalize rows
   const normalizedRows = useMemo(() => {
@@ -189,8 +225,8 @@ export function DashboardContent() {
     });
   };
 
-  // Add new row callback
-  const handleAddNewRow = (newRowData: Omit<NormalizedSheetRow, 'id' | 'parsedDate' | 'isoDate'>) => {
+  // Add new row callback with 2-way sync
+  const handleAddNewRow = async (newRowData: Omit<NormalizedSheetRow, 'id' | 'parsedDate' | 'isoDate'>) => {
     const rawNewRow: SheetRow = {
       _id: `custom-row-${Date.now()}`,
       'Sl No.': newRowData.slNo,
@@ -202,45 +238,80 @@ export function DashboardContent() {
       'Store Location': newRowData.storeLocation,
       'Store Counts': newRowData.storeCounts,
     };
-    setRawRows((prev) => [rawNewRow, ...prev]);
+    const updated = [rawNewRow, ...rawRows];
+    setRawRows(updated);
+    saveLocalCustomRows(updated);
+
+    const syncResult = await writeRowToGoogleSheet('append', rawNewRow, appsScriptUrl);
+    if (syncResult.remoteSynced) {
+      showToast('Row added and synced to Google Spreadsheet!', 'success');
+    } else {
+      showToast('Row added locally. Connect Apps Script Webhook for 2-way sheet write.', 'info');
+    }
   };
 
-  // Update existing row
-  const handleUpdateRow = (updatedRow: NormalizedSheetRow) => {
-    setRawRows((prev) =>
-      prev.map((r) => {
-        if (r._id === updatedRow.id || String(r['Sl No.']) === String(updatedRow.slNo)) {
-          return {
-            ...r,
-            'Category': updatedRow.category,
-            'Date': updatedRow.date,
-            'Installation Done': updatedRow.installationDone ? 'Yes' : 'No',
-            'Location': updatedRow.location,
-            'No. of items': updatedRow.noOfItems,
-            'Store Location': updatedRow.storeLocation,
-            'Store Counts': updatedRow.storeCounts,
-          };
-        }
-        return r;
-      })
-    );
+  // Update existing row with 2-way sync
+  const handleUpdateRow = async (updatedRow: NormalizedSheetRow) => {
+    let targetRowData: any = null;
+    const updated = rawRows.map((r) => {
+      if (r._id === updatedRow.id || String(r['Sl No.']) === String(updatedRow.slNo)) {
+        const mutated = {
+          ...r,
+          'Category': updatedRow.category,
+          'Date': updatedRow.date,
+          'Installation Done': updatedRow.installationDone ? 'Yes' : 'No',
+          'Location': updatedRow.location,
+          'No. of items': updatedRow.noOfItems,
+          'Store Location': updatedRow.storeLocation,
+          'Store Counts': updatedRow.storeCounts,
+        };
+        targetRowData = mutated;
+        return mutated;
+      }
+      return r;
+    });
+
+    setRawRows(updated);
+    saveLocalCustomRows(updated);
+
+    if (targetRowData) {
+      const syncResult = await writeRowToGoogleSheet('update', targetRowData, appsScriptUrl);
+      if (syncResult.remoteSynced) {
+        showToast(`Row #${updatedRow.slNo} updated in live Google Sheet!`, 'success');
+      } else {
+        showToast(`Row #${updatedRow.slNo} updated locally.`, 'info');
+      }
+    }
   };
 
-  // Toggle installation status
-  const handleToggleStatus = (id: string) => {
-    setRawRows((prev) =>
-      prev.map((r) => {
-        if (r._id === id || `row-${r['Sl No.']}` === id) {
-          const currentStatus = String(r['Installation Done']).trim().toLowerCase();
-          const isDone = currentStatus === 'yes' || currentStatus === 'true' || currentStatus === 'done';
-          return {
-            ...r,
-            'Installation Done': isDone ? 'No' : 'Yes',
-          };
-        }
-        return r;
-      })
-    );
+  // Toggle installation status with 2-way sync
+  const handleToggleStatus = async (id: string) => {
+    let targetRowData: any = null;
+    const updated = rawRows.map((r) => {
+      if (r._id === id || `row-${r['Sl No.']}` === id) {
+        const currentStatus = String(r['Installation Done']).trim().toLowerCase();
+        const isDone = currentStatus === 'yes' || currentStatus === 'true' || currentStatus === 'done';
+        const mutated = {
+          ...r,
+          'Installation Done': isDone ? 'No' : 'Yes',
+        };
+        targetRowData = mutated;
+        return mutated;
+      }
+      return r;
+    });
+
+    setRawRows(updated);
+    saveLocalCustomRows(updated);
+
+    if (targetRowData) {
+      const syncResult = await writeRowToGoogleSheet('toggleStatus', targetRowData, appsScriptUrl);
+      if (syncResult.remoteSynced) {
+        showToast(`Status toggled to "${targetRowData['Installation Done']}" in Google Sheet!`, 'success');
+      } else {
+        showToast(`Status toggled to "${targetRowData['Installation Done']}".`, 'info');
+      }
+    }
   };
 
   // Export Filtered Table to CSV
@@ -274,14 +345,39 @@ export function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-150 font-sans">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div
+            className={`px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-2.5 text-xs font-semibold font-mono ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-zinc-900'
+                : toastMessage.type === 'error'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 bg-white dark:bg-zinc-900'
+                : 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 border-zinc-700'
+            }`}
+          >
+            {toastMessage.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            ) : (
+              <Cloud className="w-4 h-4 text-indigo-400 shrink-0" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <Header
         sheetId={sheetId}
         lastSyncTime={lastSyncTime}
         isSyncing={isSyncing}
-        onManualSync={() => fetchSheetData()}
+        onManualSync={() => {
+          fetchSheetData();
+          showToast('Syncing with Google Spreadsheet...', 'info');
+        }}
         syncInterval={syncInterval}
-        onChangeSyncInterval={setSyncInterval}
+        onChangeSyncInterval={handleChangeSyncInterval}
         onOpenEmailModal={() => setIsEmailModalOpen(true)}
         onOpenPDFModal={() => setIsPDFModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
@@ -289,39 +385,42 @@ export function DashboardContent() {
       />
 
       {/* Main Container */}
-      <main className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Banner: Mentors Eduserv Marketing Campaign Tracker */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white dark:text-zinc-100 shadow-xs">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-800 text-white dark:text-zinc-100 shadow-xs shrink-0">
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-zinc-900 dark:text-white">
-                  Mentors Eduserv Official Marketing Tracker
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white">
+                  Mentors Eduserv Marketing Tracker
                 </span>
-                <span className="text-[10px] uppercase font-bold font-mono tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Live Sync Connected
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold font-mono tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {appsScriptUrl ? '2-Way Webhook Sync' : 'Live Cloud Sync'}
+                </span>
+                <span className="text-[9px] sm:text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  Vercel Ready
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono truncate max-w-xl">
-                Source Google Sheet: 1p7_1ApCl2B4t4nWWLnYn3jN7bjOxXSyqzZxdO70hvxY
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono truncate max-w-xs sm:max-w-xl">
+                Source Sheet: {sheetId}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => setIsEmailModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors min-h-[38px] sm:min-h-0"
             >
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>AI Weekly Summary</span>
+              <span>AI Summary</span>
             </button>
             <button
               onClick={() => setIsPDFModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-950 shadow-xs transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-950 shadow-xs transition-colors min-h-[38px] sm:min-h-0"
             >
               <span>Export PDF</span>
             </button>
@@ -377,14 +476,17 @@ export function DashboardContent() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         currentSheetId={sheetId}
-        onUpdateSheetId={(newId) => {
-          setSheetId(newId);
-          fetchSheetData(newId);
-        }}
+        onUpdateSheetId={handleUpdateSheetId}
         syncInterval={syncInterval}
-        onChangeSyncInterval={setSyncInterval}
+        onChangeSyncInterval={handleChangeSyncInterval}
         lastSyncTime={lastSyncTime}
-        onRefresh={() => fetchSheetData()}
+        onRefresh={() => {
+          fetchSheetData();
+          showToast('Refreshing live sheet data...', 'info');
+        }}
+        appsScriptUrl={appsScriptUrl}
+        onUpdateAppsScriptUrl={handleUpdateAppsScriptUrl}
+        activeSyncSource={syncSource}
       />
     </div>
   );

@@ -10,6 +10,9 @@ import {
   GraduationCap,
   Maximize2,
   Minimize2,
+  Menu,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -40,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -75,32 +79,32 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 transition-colors bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-3">
+      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-2 sm:gap-3">
           {/* Logo & Brand: Official Mentors Eduserv */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center shadow-xs border border-indigo-500/30">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center shadow-xs border border-indigo-500/30">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-base sm:text-lg tracking-tight leading-none text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="font-bold text-sm sm:text-base md:text-lg tracking-tight leading-none text-zinc-900 dark:text-zinc-100 truncate">
                   Mentors Eduserv
                 </h1>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold font-mono uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                  Marketing Tracker
+                <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold font-mono uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shrink-0">
+                  Tracker
                 </span>
-                <span className="hidden md:inline-flex text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono font-semibold uppercase">
+                <span className="hidden md:inline-flex text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono font-semibold uppercase shrink-0">
                   Official
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider font-mono truncate max-w-[280px] sm:max-w-md">
-                Outdoor & Field Campaign Management • Sheet: {sheetId.substring(0, 14)}...
+              <p className="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 sm:mt-1 uppercase tracking-wider font-mono truncate max-w-[180px] xs:max-w-[240px] sm:max-w-md">
+                Field Campaign Ops • {rowCount} Items
               </p>
             </div>
           </div>
 
-          {/* Center: Live Sync Pulse Status Badge */}
+          {/* Desktop Center: Live Sync Pulse Status Badge */}
           <div className="hidden lg:flex items-center gap-3 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3.5 py-1.5 rounded-full text-xs">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
@@ -112,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <span className="text-zinc-300 dark:text-zinc-700">•</span>
               <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">
-                {formatLastSync()} ({rowCount} items)
+                {formatLastSync()}
               </span>
             </div>
 
@@ -144,14 +148,14 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Bento Quick Action Bar */}
-          <div className="flex items-center gap-2">
+          {/* Desktop Right Action Bar */}
+          <div className="hidden md:flex items-center gap-2">
             {/* Sheet Link */}
             <a
               href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-colors"
               title="Open source Google Sheet"
             >
               <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
@@ -164,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-colors"
             >
               <Mail className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="hidden md:inline">Distribute</span>
+              <span>Distribute</span>
             </button>
 
             {/* PDF Report Export Button */}
@@ -211,8 +215,123 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           </div>
+
+          {/* Mobile Right Controls: Compact Sync + Theme + Mobile Menu Toggle */}
+          <div className="flex md:hidden items-center gap-1.5">
+            {/* Quick Mobile Sync Button */}
+            <button
+              onClick={onManualSync}
+              disabled={isSyncing}
+              aria-label="Sync Data"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 disabled:opacity-50 active:scale-95 transition-all"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-indigo-500' : ''}`} />
+            </button>
+
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle Theme"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 active:scale-95 transition-all"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-zinc-600" />
+              )}
+            </button>
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Open Navigation Menu"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 shadow-xs active:scale-95 transition-all"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3 animate-in slide-in-from-top-2 duration-150">
+            {/* Live Sync Status Info */}
+            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isSyncing ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${isSyncing ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                </span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {isSyncing ? 'Syncing...' : 'Connected'}
+                </span>
+                <span className="text-zinc-400">• {formatLastSync()}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-zinc-400 text-[10px]">Interval:</span>
+                <select
+                  value={syncInterval}
+                  onChange={(e) => onChangeSyncInterval(Number(e.target.value))}
+                  className="bg-transparent font-bold text-zinc-700 dark:text-zinc-200 text-xs focus:outline-none"
+                >
+                  <option value={10}>10s</option>
+                  <option value={30}>30s</option>
+                  <option value={60}>1m</option>
+                  <option value={0}>Manual</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Quick Action Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenPDFModal();
+                }}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-semibold text-xs shadow-xs min-h-[44px] active:scale-98"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Export PDF</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenEmailModal();
+                }}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-indigo-600 text-white font-semibold text-xs shadow-xs min-h-[44px] active:scale-98"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Distribute</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenSettingsModal();
+                }}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs min-h-[44px] active:scale-98"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-zinc-500" />
+                <span>Settings</span>
+              </button>
+
+              <a
+                href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-xs min-h-[44px] active:scale-98"
+              >
+                <ExternalLink className="w-4 h-4 text-zinc-500" />
+                <span>Google Sheet</span>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
 };
+

@@ -115,12 +115,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
       {/* 1. Category Volume & Status Bar Chart */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs transition-all">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shrink-0">
               <BarChart3 className="w-4 h-4" />
             </div>
             <div>
@@ -134,15 +134,15 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
           </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="h-56 sm:h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={categoryChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <BarChart data={categoryChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-              <XAxis dataKey="category" stroke={textColor} fontSize={11} tickLine={false} />
-              <YAxis stroke={textColor} fontSize={11} tickLine={false} />
+              <XAxis dataKey="category" stroke={textColor} fontSize={10} tickLine={false} />
+              <YAxis stroke={textColor} fontSize={10} tickLine={false} width={35} />
               <Tooltip content={<CustomTooltip />} />
               <Legend
-                wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }}
                 formatter={(value) => (
                   <span className="text-zinc-600 dark:text-zinc-400 capitalize font-medium">
                     {value}
@@ -157,10 +157,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
       </div>
 
       {/* 2. Location Distribution Chart */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs transition-all">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+            <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 shrink-0">
               <MapPin className="w-4 h-4" />
             </div>
             <div>
@@ -174,22 +174,22 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
           </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="h-56 sm:h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={locationChartData}
               layout="vertical"
-              margin={{ top: 10, right: 20, left: 20, bottom: 0 }}
+              margin={{ top: 10, right: 15, left: 5, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-              <XAxis type="number" stroke={textColor} fontSize={11} tickLine={false} />
+              <XAxis type="number" stroke={textColor} fontSize={10} tickLine={false} />
               <YAxis
                 type="category"
                 dataKey="location"
                 stroke={textColor}
-                fontSize={11}
+                fontSize={10}
                 tickLine={false}
-                width={85}
+                width={70}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="items" name="Total Items" fill="#6366f1" radius={[0, 4, 4, 0]} />
@@ -199,10 +199,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
       </div>
 
       {/* 3. Category Volume Share (Donut) */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs transition-all">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
               <PieIcon className="w-4 h-4" />
             </div>
             <div>
@@ -216,7 +216,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
           </div>
         </div>
 
-        <div className="h-64 w-full flex items-center justify-center">
+        <div className="h-56 sm:h-64 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip content={<CustomTooltip />} />
@@ -226,8 +226,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
                 nameKey="category"
                 cx="50%"
                 cy="50%"
-                innerRadius={55}
-                outerRadius={85}
+                innerRadius={50}
+                outerRadius={75}
                 paddingAngle={4}
               >
                 {categoryChartData.map((entry, index) => (
@@ -238,10 +238,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
                 ))}
               </Pie>
               <Legend
-                wrapperStyle={{ fontSize: '11px' }}
+                wrapperStyle={{ fontSize: '10px' }}
                 formatter={(value, entry: any) => (
                   <span className="text-zinc-600 dark:text-zinc-400 font-medium">
-                    {value} ({entry?.payload?.totalItems || 0} items)
+                    {value} ({entry?.payload?.totalItems || 0})
                   </span>
                 )}
               />
@@ -251,10 +251,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
       </div>
 
       {/* 4. Store Footprint Impact Trend */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs transition-all">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
@@ -268,9 +268,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
           </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="h-56 sm:h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={locationChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <AreaChart data={locationChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="storeCountGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
@@ -278,11 +278,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ rows }) => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-              <XAxis dataKey="location" stroke={textColor} fontSize={11} tickLine={false} />
+              <XAxis dataKey="location" stroke={textColor} fontSize={10} tickLine={false} />
               <YAxis
                 stroke={textColor}
-                fontSize={11}
+                fontSize={10}
                 tickLine={false}
+                width={35}
                 tickFormatter={(val) => formatNumberCompact(val)}
               />
               <Tooltip content={<CustomTooltip />} />
