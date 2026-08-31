@@ -1,0 +1,6 @@
+{
+  "name": "Mentors Eduserv Marketing Tracker",
+  "description": "Official marketing deployment and outdoor campaign analytics tracker for Mentors Eduserv with real-time Google Sheets sync, automated reporting, and AI summaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
