@@ -37,6 +37,17 @@ export interface FilterState {
   searchQuery: string;
 }
 
+export interface InstallationGrowthKPI {
+  growthPercentage: number; // e.g. 25.5 or -10.0
+  formattedPercentage: string; // e.g. "+25.5%" or "-10.0%"
+  trend: 'growth' | 'decline' | 'neutral';
+  currentWeekRecords: number;
+  previousWeekRecords: number;
+  currentWeekItems: number;
+  previousWeekItems: number;
+  hasPreviousWeekData: boolean;
+}
+
 export interface KPISummary {
   totalItems: number;
   installedItems: number;
@@ -48,6 +59,7 @@ export interface KPISummary {
   topLocation: { name: string; items: number };
   topCategory: { name: string; items: number };
   totalRecords: number;
+  installationGrowth: InstallationGrowthKPI;
 }
 
 export interface Stakeholder {

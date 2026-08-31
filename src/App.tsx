@@ -17,21 +17,29 @@ const DEFAULT_SHEET_ID = '1p7_1ApCl2B4t4nWWLnYn3jN7bjOxXSyqzZxdO70hvxY';
 
 // Fallback initial dataset from the spreadsheet
 const INITIAL_FALLBACK_ROWS: SheetRow[] = [
-  { _id: 'r1', 'Sl No.': 1, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1242 },
-  { _id: 'r2', 'Sl No.': 2, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1655783 },
-  { _id: 'r3', 'Sl No.': 3, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 452664 },
-  { _id: 'r4', 'Sl No.': 4, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 4515645 },
-  { _id: 'r5', 'Sl No.': 5, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 4741356 },
-  { _id: 'r6', 'Sl No.': 6, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 597535.8 },
-  { _id: 'r7', 'Sl No.': 7, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'PL', 'Store Counts': 720936.6 },
-  { _id: 'r8', 'Sl No.': 8, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'Boring road', 'Store Counts': 844337.4 },
-  { _id: 'r9', 'Sl No.': 9, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'PL', 'Store Counts': 967738.2 },
-  { _id: 'r10', 'Sl No.': 10, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 1091139 },
-  { _id: 'r11', 'Sl No.': 11, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1214539.8 },
-  { _id: 'r12', 'Sl No.': 12, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1337940.6 },
-  { _id: 'r13', 'Sl No.': 13, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 1461341.4 },
-  { _id: 'r14', 'Sl No.': 14, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 1584742.2 },
-  { _id: 'r15', 'Sl No.': 15, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1708143 }
+  // Previous Week Deployments (21/08/26 - 22/08/26)
+  { _id: 'r-prev1', 'Sl No.': 1, 'Category': 'Hoarding', 'Date': '21/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 42, 'Store Location': 'PL', 'Store Counts': 980 },
+  { _id: 'r-prev2', 'Sl No.': 2, 'Category': 'Hoarding', 'Date': '21/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 18, 'Store Location': 'Boring road', 'Store Counts': 1200400 },
+  { _id: 'r-prev3', 'Sl No.': 3, 'Category': 'Banners', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 28, 'Store Location': 'PL', 'Store Counts': 380450 },
+  { _id: 'r-prev4', 'Sl No.': 4, 'Category': 'AutoVenyl', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 65, 'Store Location': 'Boring road', 'Store Counts': 3100200 },
+  { _id: 'r-prev5', 'Sl No.': 5, 'Category': 'Banners', 'Date': '22/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 38, 'Store Location': 'PL', 'Store Counts': 3450000 },
+  
+  // Current Week Deployments (28/08/26 - 29/08/26)
+  { _id: 'r1', 'Sl No.': 6, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1242 },
+  { _id: 'r2', 'Sl No.': 7, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1655783 },
+  { _id: 'r3', 'Sl No.': 8, 'Category': 'Hoarding', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 452664 },
+  { _id: 'r4', 'Sl No.': 9, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 4515645 },
+  { _id: 'r5', 'Sl No.': 10, 'Category': 'Hoarding', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 4741356 },
+  { _id: 'r6', 'Sl No.': 11, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 597535.8 },
+  { _id: 'r7', 'Sl No.': 12, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'PL', 'Store Counts': 720936.6 },
+  { _id: 'r8', 'Sl No.': 13, 'Category': 'Banners', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'Boring road', 'Store Counts': 844337.4 },
+  { _id: 'r9', 'Sl No.': 14, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'PL', 'Store Counts': 967738.2 },
+  { _id: 'r10', 'Sl No.': 15, 'Category': 'Banners', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'Boring road', 'Store Counts': 1091139 },
+  { _id: 'r11', 'Sl No.': 16, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'Boring road', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1214539.8 },
+  { _id: 'r12', 'Sl No.': 17, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'jk', 'No. of items': 24, 'Store Location': 'Boring road', 'Store Counts': 1337940.6 },
+  { _id: 'r13', 'Sl No.': 18, 'Category': 'AutoVenyl', 'Date': '28/08/26', 'Installation Done': 'Yes', 'Location': 'station', 'No. of items': 36, 'Store Location': 'PL', 'Store Counts': 1461341.4 },
+  { _id: 'r14', 'Sl No.': 19, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'fraser', 'No. of items': 97, 'Store Location': 'Boring road', 'Store Counts': 1584742.2 },
+  { _id: 'r15', 'Sl No.': 20, 'Category': 'AutoVenyl', 'Date': '29/08/26', 'Installation Done': 'Yes', 'Location': 'bailey', 'No. of items': 54, 'Store Location': 'PL', 'Store Counts': 1708143 }
 ];
 
 export function DashboardContent() {

@@ -92,14 +92,18 @@ export async function generateProjectReportPDF({
 
   curY += 19;
 
-  // 3. Executive KPI Metrics Cards (4 columns)
+  // 3. Executive KPI Metrics Cards (5 columns)
   if (includeSummaryKPIs && kpis) {
-    const cardWidth = (pageWidth - 28 - 9) / 4;
+    const cardWidth = (pageWidth - 28 - 12) / 5;
     const cardHeight = 18;
+
+    const growthFormatted = kpis.installationGrowth?.formattedPercentage || '0.0%';
+    const growthSub = kpis.installationGrowth ? `${kpis.installationGrowth.currentWeekRecords} vs ${kpis.installationGrowth.previousWeekRecords} prev` : 'WoW Pace';
 
     const cards = [
       { label: 'TOTAL ITEMS', value: kpis.totalItems.toLocaleString(), sub: `${kpis.totalRecords} Records` },
-      { label: 'COMPLETION RATE', value: `${kpis.completionRate}%`, sub: `${kpis.installedItems} Installed` },
+      { label: 'COMPLETION', value: `${kpis.completionRate}%`, sub: `${kpis.installedItems} Installed` },
+      { label: 'WOW GROWTH', value: growthFormatted, sub: growthSub },
       { label: 'STORE FOOTPRINT', value: formatNumberCompact(kpis.totalStoreCounts), sub: 'Total Store Counts' },
       { label: 'TOP LOCATION', value: kpis.topLocation.name || 'N/A', sub: `${kpis.topLocation.items} Items` }
     ];
@@ -110,20 +114,20 @@ export async function generateProjectReportPDF({
       doc.setDrawColor(203, 213, 225); // slate-300
       doc.roundedRect(x, curY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
 
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(100, 116, 139);
-      doc.text(card.label, x + 4, curY + 5);
+      doc.text(card.label, x + 3.5, curY + 4.5);
 
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(15, 23, 42);
-      doc.text(String(card.value), x + 4, curY + 11);
+      doc.text(String(card.value), x + 3.5, curY + 10.5);
 
-      doc.setFontSize(6.5);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
-      doc.text(card.sub, x + 4, curY + 15.5);
+      doc.text(card.sub, x + 3.5, curY + 15);
     });
 
     curY += cardHeight + 6;

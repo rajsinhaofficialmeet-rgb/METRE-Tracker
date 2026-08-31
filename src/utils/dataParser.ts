@@ -1,4 +1,4 @@
-import { SheetRow, NormalizedSheetRow, KPISummary } from '../types';
+import { SheetRow, NormalizedSheetRow, KPISummary, InstallationGrowthKPI } from '../types';
 import { parseSheetDate } from './dateUtils';
 
 export function normalizeSheetRows(rawRows: SheetRow[]): NormalizedSheetRow[] {
@@ -33,6 +33,116 @@ export function normalizeSheetRows(rawRows: SheetRow[]): NormalizedSheetRow[] {
   });
 }
 
+export function computeInstallationGrowth(rows: NormalizedSheetRow[]): InstallationGrowthKPI {
+  const installedRows = rows.filter(r => r.installationDone);
+  
+  if (installedRows.length === 0) {
+    return {
+      growthPercentage: 0,
+      formattedPercentage: '0.0%',
+      trend: 'neutral',
+      currentWeekRecords: 0,
+      previousWeekRecords: 0,
+      currentWeekItems: 0,
+      previousWeekItems: 0,
+      hasPreviousWeekData: false
+    };
+  }
+
+  // Get rows with parsed dates
+  const datedRows = installedRows
+    .map(r => ({
+      row: r,
+      time: r.parsedDate ? r.parsedDate.getTime() : (r.isoDate ? new Date(r.isoDate).getTime() : 0)
+    }))
+    .filter(item => !isNaN(item.time) && item.time > 0)
+    .sort((a, b) => a.time - b.time);
+
+  if (datedRows.length === 0) {
+    return {
+      growthPercentage: 0,
+      formattedPercentage: '0.0%',
+      trend: 'neutral',
+      currentWeekRecords: installedRows.length,
+      previousWeekRecords: 0,
+      currentWeekItems: installedRows.reduce((sum, r) => sum + r.noOfItems, 0),
+      previousWeekItems: 0,
+      hasPreviousWeekData: false
+    };
+  }
+
+  // Anchor to the latest date in the filtered dataset
+  const latestItem = datedRows[datedRows.length - 1];
+  const latestDate = new Date(latestItem.time);
+  
+  // 7-day rolling windows
+  const currentEnd = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate(), 23, 59, 59, 999).getTime();
+  const currentStart = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 6, 0, 0, 0, 0).getTime();
+  const prevEnd = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 7, 23, 59, 59, 999).getTime();
+  const prevStart = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate() - 13, 0, 0, 0, 0).getTime();
+
+  let currentWeekRecords = 0;
+  let previousWeekRecords = 0;
+  let currentWeekItems = 0;
+  let previousWeekItems = 0;
+
+  datedRows.forEach(({ row, time }) => {
+    if (time >= currentStart && time <= currentEnd) {
+      currentWeekRecords++;
+      currentWeekItems += row.noOfItems;
+    } else if (time >= prevStart && time <= prevEnd) {
+      previousWeekRecords++;
+      previousWeekItems += row.noOfItems;
+    }
+  });
+
+  if (currentWeekRecords === 0) {
+    currentWeekRecords = datedRows.length;
+    currentWeekItems = datedRows.reduce((acc, d) => acc + d.row.noOfItems, 0);
+  }
+
+  let growthPercentage = 0;
+  let trend: 'growth' | 'decline' | 'neutral' = 'neutral';
+  let formattedPercentage = '0.0%';
+  const hasPreviousWeekData = previousWeekRecords > 0;
+
+  if (previousWeekRecords === 0) {
+    if (currentWeekRecords > 0) {
+      growthPercentage = 100;
+      trend = 'growth';
+      formattedPercentage = '+100%';
+    } else {
+      growthPercentage = 0;
+      trend = 'neutral';
+      formattedPercentage = '0.0%';
+    }
+  } else {
+    const diff = currentWeekRecords - previousWeekRecords;
+    growthPercentage = Math.round((diff / previousWeekRecords) * 1000) / 10;
+    if (growthPercentage > 0) {
+      trend = 'growth';
+      formattedPercentage = `+${growthPercentage.toFixed(1)}%`;
+    } else if (growthPercentage < 0) {
+      trend = 'decline';
+      formattedPercentage = `${growthPercentage.toFixed(1)}%`;
+    } else {
+      trend = 'neutral';
+      formattedPercentage = '0.0%';
+    }
+  }
+
+  return {
+    growthPercentage,
+    formattedPercentage,
+    trend,
+    currentWeekRecords,
+    previousWeekRecords,
+    currentWeekItems,
+    previousWeekItems,
+    hasPreviousWeekData
+  };
+}
+
 export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
   if (rows.length === 0) {
     return {
@@ -45,7 +155,17 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
       uniqueCategories: 0,
       topLocation: { name: 'N/A', items: 0 },
       topCategory: { name: 'N/A', items: 0 },
-      totalRecords: 0
+      totalRecords: 0,
+      installationGrowth: {
+        growthPercentage: 0,
+        formattedPercentage: '0.0%',
+        trend: 'neutral',
+        currentWeekRecords: 0,
+        previousWeekRecords: 0,
+        currentWeekItems: 0,
+        previousWeekItems: 0,
+        hasPreviousWeekData: false
+      }
     };
   }
 
@@ -89,6 +209,8 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
     }
   });
 
+  const installationGrowth = computeInstallationGrowth(rows);
+
   return {
     totalItems,
     installedItems,
@@ -99,7 +221,8 @@ export function computeKPISummary(rows: NormalizedSheetRow[]): KPISummary {
     uniqueCategories: Object.keys(categoryMap).length,
     topLocation,
     topCategory,
-    totalRecords: rows.length
+    totalRecords: rows.length,
+    installationGrowth
   };
 }
 

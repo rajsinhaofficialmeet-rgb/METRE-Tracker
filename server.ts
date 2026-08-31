@@ -104,21 +104,26 @@ app.get('/api/sheet-data', async (req, res) => {
       console.warn('Direct fetch failed, returning fallback dataset:', fetchErr.message);
       // Fallback data if offline or access restricted
       csvData = `Sl No.,Category,Date,Installation Done,Location,No. of items,Store Location,Store Counts
-1,Hoarding,28/08/26,Yes,Boring road,54,PL,1242
-2,Hoarding,28/08/26,Yes,jk,24,Boring road,1655783
-3,Hoarding,28/08/26,Yes,station,36,PL,452664
-4,Hoarding,29/08/26,Yes,fraser,97,Boring road,4515645
-5,Hoarding,29/08/26,Yes,bailey,54,PL,4741356
-6,Banners,28/08/26,Yes,Boring road,54,Boring road,597535.8
-7,Banners,28/08/26,Yes,jk,24,PL,720936.6
-8,Banners,28/08/26,Yes,station,36,Boring road,844337.4
-9,Banners,29/08/26,Yes,fraser,97,PL,967738.2
-10,Banners,29/08/26,Yes,bailey,54,Boring road,1091139
-11,AutoVenyl,28/08/26,Yes,Boring road,54,PL,1214539.8
-12,AutoVenyl,28/08/26,Yes,jk,24,Boring road,1337940.6
-13,AutoVenyl,28/08/26,Yes,station,36,PL,1461341.4
-14,AutoVenyl,29/08/26,Yes,fraser,97,Boring road,1584742.2
-15,AutoVenyl,29/08/26,Yes,bailey,54,PL,1708143`;
+1,Hoarding,21/08/26,Yes,Boring road,42,PL,980
+2,Hoarding,21/08/26,Yes,jk,18,Boring road,1200400
+3,Banners,22/08/26,Yes,station,28,PL,380450
+4,AutoVenyl,22/08/26,Yes,fraser,65,Boring road,3100200
+5,Banners,22/08/26,Yes,bailey,38,PL,3450000
+6,Hoarding,28/08/26,Yes,Boring road,54,PL,1242
+7,Hoarding,28/08/26,Yes,jk,24,Boring road,1655783
+8,Hoarding,28/08/26,Yes,station,36,PL,452664
+9,Hoarding,29/08/26,Yes,fraser,97,Boring road,4515645
+10,Hoarding,29/08/26,Yes,bailey,54,PL,4741356
+11,Banners,28/08/26,Yes,Boring road,54,Boring road,597535.8
+12,Banners,28/08/26,Yes,jk,24,PL,720936.6
+13,Banners,28/08/26,Yes,station,36,Boring road,844337.4
+14,Banners,29/08/26,Yes,fraser,97,PL,967738.2
+15,Banners,29/08/26,Yes,bailey,54,Boring road,1091139
+16,AutoVenyl,28/08/26,Yes,Boring road,54,PL,1214539.8
+17,AutoVenyl,28/08/26,Yes,jk,24,Boring road,1337940.6
+18,AutoVenyl,28/08/26,Yes,station,36,PL,1461341.4
+19,AutoVenyl,29/08/26,Yes,fraser,97,Boring road,1584742.2
+20,AutoVenyl,29/08/26,Yes,bailey,54,PL,1708143`;
     }
 
     const parsed = parseCSV(csvData);
